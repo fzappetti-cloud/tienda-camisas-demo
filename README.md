@@ -1,0 +1,17 @@
+# Tienda de camisas con marca propia – Demo interactiva
+
+Demo visual (un solo archivo HTML, sin dependencias) del sistema "llave en mano":
+tablero operativo + escáner de distribuidoras + estudio de imagen + precios + publicación en Tiendanube + pedidos.
+
+## Ver la demo
+Abrir `demo/index.html` en el navegador.
+
+## Flujo de trabajo
+- `main`: versión estable de la demo.
+- Una rama por cambio (`git checkout -b mejora-escaner`) y se mezcla a `main` cuando está pulido.
+
+## Pendiente (ver proyecto)
+- Pulir textos y diseño con marca de la clienta.
+- Siguiente hito: esqueleto real (React + Node + extensión Chrome).
+
+Nota: las fotos de terceros son responsabilidad de la clienta; la demo usa dibujos de ejemplo.
