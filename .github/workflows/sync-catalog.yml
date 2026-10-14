@@ -1,0 +1,25 @@
+name: Sincronizar catálogo
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 03:00 hora Argentina, una vez por día
+  workflow_dispatch:       # botón "Run workflow" = Actualizar ahora
+permissions:
+  contents: write
+concurrency:
+  group: sync-catalog
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scraper/sync.js
+        continue-on-error: true
+      - name: Guardar cambios
+        run: |
+          git config user.name "catalogo-bot"; git config user.email "bot@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || (git commit -m "Catálogo actualizado" && git push)

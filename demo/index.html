@@ -288,6 +288,14 @@ const P=[
 ];
 const byId=id=>P.find(p=>p.id===id);
 let S, tab='A', tmr=[];
+const IDS={A:[1,2,3,4,9,10,11,12],B:[5,6,7,8,13,14,15,16]};
+async function loadCatalog(){
+ try{const r=await fetch('../data/catalog.json?'+Date.now());if(!r.ok)return;const c=await r.json();const np=[];
+  for(const k of ['A','B']){const st=c.stores&&c.stores[k];if(!st)continue;st.products.slice(0,8).forEach((x,i)=>{const old=P.find(p=>p.id===IDS[k][i]);np.push({id:IDS[k][i],name:x.name,src:k,cost:x.price,img:x.image,url:x.url,sz:old?old.sz:{S:2,M:3,L:2,XL:1}})})}
+  if(np.length>=8){P.length=0;np.forEach(p=>P.push(p));if(c.updated){window.CAT_UPDATED=c.updated}}
+  const t=$('#syncTag');if(t&&window.CAT_UPDATED)t.textContent='Catálogo del '+new Date(window.CAT_UPDATED).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  renderAll()}catch(e){}
+}
 
 function init(){
  S={brand:'Tu Marca',color:'#8a4b3c',platform:'tn',captured:[],selected:[],detail:{},img:{},mult:2,round:500,feeTn:2,feeMp:5,
@@ -422,7 +430,7 @@ function removeItem(id){S.captured=S.captured.filter(x=>x!==id);S.selected=S.sel
 $('#syncNow').addEventListener('click',()=>{
  const sc=$('#scanning');sc.classList.add('on');$('#syncNow').disabled=true;
  later(()=>{sc.classList.remove('on');$('#syncNow').disabled=false;const t=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});$('#syncTag').textContent='Sincronizado hoy '+t;
-  logAdd('Catálogo actualizado: '+SRCNAME[tab]+' ('+P.filter(p=>p.src===tab).length+' productos)');renderAll();toast('Catálogo actualizado')},1200);
+  loadCatalog();logAdd('Catálogo actualizado: '+SRCNAME[tab]+' ('+P.filter(p=>p.src===tab).length+' productos)');renderAll();toast('Catálogo actualizado')},1200);
 });
 $('#srcTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-s]');if(b){tab=b.dataset.s;cat='Todas';renderScan()}});
 function clearInbox(){S.captured=[];S.selected=[];S.detail={};S.img={};queue.length=0;renderAll()}
@@ -609,7 +617,7 @@ function quickDemo(){
 }
 function resetAll(){tmr.forEach(clearTimeout);tmr=[];const keep={brand:S.brand,color:S.color,platform:S.platform};init();Object.assign(S,keep);$('#plog').innerHTML='';$('#pprog').style.width='0';$('#dprog').style.width='0';closeCart();closeM();show('dash')}
 
-init();renderAll();
+init();renderAll();loadCatalog();
 </script>
 </body>
 </html>
