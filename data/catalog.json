@@ -1,113 +1,113 @@
 {
- "updated": "2026-10-14T14:00:00.000Z",
- "stores": {
-  "A": {
-   "name": "Vintage BSAS",
-   "url": "https://www.vintagebsas.com.ar/",
-   "products": [
-    {
-     "name": "Camisa Broderie MASTACIA",
-     "price": 31240,
-     "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/img_0048-6da16a7b9105f2c55217842293829122-480-0.webp",
-     "url": "https://www.vintagebsas.com.ar/"
+  "updated": "2026-10-14T14:13:49.957Z",
+  "stores": {
+    "A": {
+      "name": "Vintage BSAS",
+      "url": "https://www.vintagebsas.com.ar/",
+      "products": [
+        {
+          "name": "Camisa Bordada VINARA",
+          "price": 31240,
+          "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-22-jul-2026-15_22_01-f2b7ca78750633308d17847447875625-480-0.webp",
+          "url": "https://www.vintagebsas.com.ar/productos/camisa-bordada-vinara-70234-2y2wm/"
+        },
+        {
+          "name": "Camisa Bordada BELLIA",
+          "price": 43740,
+          "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/img_0212-e42c69b6db1777c68b17847354462493-480-0.webp",
+          "url": "https://www.vintagebsas.com.ar/productos/camisa-bordada-bellia-278768-73g97/"
+        },
+        {
+          "name": "Camisola Tablitas Y Bordado REMYA",
+          "price": 34990,
+          "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-21-jul-2026-15_49_17-b96ee89a0724180c5c17846599915272-480-0.webp",
+          "url": "https://www.vintagebsas.com.ar/productos/camisola-tablitas-y-bordado-remya-70260-1tzox/"
+        },
+        {
+          "name": "Camisola Tablitas y Guipiur ROZME",
+          "price": 34990,
+          "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-21-jul-2026-14_42_08-657b1c72c0f68a7abe17846566925470-480-0.webp",
+          "url": "https://www.vintagebsas.com.ar/productos/camisola-tablitas-y-guipiur-rozme-70233-17enq/"
+        },
+        {
+          "name": "Camisa Rayada BILLY",
+          "price": 31240,
+          "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-21-jul-2026-14_16_34-7e64b049fa420aa00517846543842509-480-0.webp",
+          "url": "https://www.vintagebsas.com.ar/productos/camisa-rayada-billy-70268-n3dng/"
+        },
+        {
+          "name": "Camisa Bordada PALMERAS",
+          "price": 31240,
+          "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/img_0095-c5a6df6523b31657b817846528870030-480-0.webp",
+          "url": "https://www.vintagebsas.com.ar/productos/camisa-bordada-palmeras-70252-1ixbg/"
+        },
+        {
+          "name": "Camisa Broderie MASTACIA",
+          "price": 31240,
+          "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/img_0048-6da16a7b9105f2c55217842293829122-480-0.webp",
+          "url": "https://www.vintagebsas.com.ar/productos/camisa-broderie-mastacia-70287-x8p4e/"
+        },
+        {
+          "name": "Camisa Gasa Bordada POLKA",
+          "price": 49990,
+          "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-16-jul-2026-14_27_47-10a55e4e20615ea23e17842283319951-480-0.webp",
+          "url": "https://www.vintagebsas.com.ar/productos/camisa-gasa-bordada-polka-278770-35rvn/"
+        }
+      ]
     },
-    {
-     "name": "Camisa Gasa Bordada POLKA",
-     "price": 49990,
-     "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-16-jul-2026-14_27_47-10a55e4e20615ea23e17842283319951-480-0.webp",
-     "url": "https://www.vintagebsas.com.ar/"
-    },
-    {
-     "name": "Camisa Bordada VINARA",
-     "price": 31240,
-     "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-22-jul-2026-15_22_01-f2b7ca78750633308d17847447875625-480-0.webp",
-     "url": "https://www.vintagebsas.com.ar/"
-    },
-    {
-     "name": "Camisa Bordada BELLIA",
-     "price": 43740,
-     "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/img_0212-e42c69b6db1777c68b17847354462493-480-0.webp",
-     "url": "https://www.vintagebsas.com.ar/"
-    },
-    {
-     "name": "Camisa Rayada BILLY",
-     "price": 31240,
-     "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-21-jul-2026-14_16_34-7e64b049fa420aa00517846543842509-480-0.webp",
-     "url": "https://www.vintagebsas.com.ar/"
-    },
-    {
-     "name": "Camisa Bordada PALMERAS",
-     "price": 31240,
-     "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/img_0095-c5a6df6523b31657b817846528870030-480-0.webp",
-     "url": "https://www.vintagebsas.com.ar/"
-    },
-    {
-     "name": "Camisa Lentejuelas Rayada VTK 2144",
-     "price": 34990,
-     "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/aeae6ee8-86ad-44ba-9add-ce92dfaac9d5-2e3c9a2b2500f0fec817235618602830-480-0.webp",
-     "url": "https://www.vintagebsas.com.ar/"
-    },
-    {
-     "name": "Camisa Calada BERENICE",
-     "price": 31240,
-     "image": "https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-15-jul-2026-13_02_03-2bc5c869a1c74ca74917841313937084-480-0.webp",
-     "url": "https://www.vintagebsas.com.ar/"
+    "B": {
+      "name": "Rumba Helguera",
+      "url": "https://www.rumbahelguera.com.ar/",
+      "products": [
+        {
+          "name": "Camisa SORCHA jeans c/piedras",
+          "price": 43750,
+          "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-18-05-26-062b94e6eb70f3f73a17839497474682-480-0.webp",
+          "url": "https://www.rumbahelguera.com.ar/productos/camisa-sorcha-jeans-c-piedras-ruk70013-oet0a/"
+        },
+        {
+          "name": "Camisa ROWAM broderie",
+          "price": 31250,
+          "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-18-02-50-92a4f00d1b026d43e017839494615707-480-0.webp",
+          "url": "https://www.rumbahelguera.com.ar/productos/camisa-rowam-broderie-ruk70281-1c373/"
+        },
+        {
+          "name": "Camisaco denim PIPER",
+          "price": 50000,
+          "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-18-01-37-72dc447c06a2a0a93d17839491236724-480-0.webp",
+          "url": "https://www.rumbahelguera.com.ar/productos/camisaco-denim-piper-ruk70273-1odb0/"
+        },
+        {
+          "name": "Camisa gasa HAVEN c/bordado y piedras",
+          "price": 50000,
+          "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-57-47-773844bbc896ccbb7f17839486975594-480-0.webp",
+          "url": "https://www.rumbahelguera.com.ar/productos/camisa-gasa-haven-c-bordado-y-piedras-ru278770-wbz5d/"
+        },
+        {
+          "name": "Camisa JILLIAN bordada",
+          "price": 43750,
+          "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-42-37-8519507c97e297df4917839464322511-480-0.webp",
+          "url": "https://www.rumbahelguera.com.ar/productos/camisa-jillian-bordada-ru278768-1f6dk/"
+        },
+        {
+          "name": "Camisa DAVE c/puntilla",
+          "price": 31250,
+          "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-32-41-606e2e2c1c2ceafa7317839453788550-480-0.webp",
+          "url": "https://www.rumbahelguera.com.ar/productos/camisa-dave-c-puntilla-ruk4109-1mnti/"
+        },
+        {
+          "name": "Camisa IHONE bordada",
+          "price": 31250,
+          "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-31-25-27e61941eaaaa07f7d17839447763132-480-0.webp",
+          "url": "https://www.rumbahelguera.com.ar/productos/camisa-ihone-bordada-ruk70230-1fotx/"
+        },
+        {
+          "name": "Camisaco jean ALLURA c/tachas",
+          "price": 43750,
+          "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-30-15-291d99750547fa7b2617839444655409-480-0.webp",
+          "url": "https://www.rumbahelguera.com.ar/productos/camisaco-jean-allura-c-tachas-ruk70286-13d0r/"
+        }
+      ]
     }
-   ]
-  },
-  "B": {
-   "name": "Rumba Helguera",
-   "url": "https://www.rumbahelguera.com.ar/",
-   "products": [
-    {
-     "name": "Camisa SORCHA jeans c/piedras",
-     "price": 43750,
-     "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-18-05-26-062b94e6eb70f3f73a17839497474682-480-0.webp",
-     "url": "https://www.rumbahelguera.com.ar/"
-    },
-    {
-     "name": "Camisa ROWAM broderie",
-     "price": 31250,
-     "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-18-02-50-92a4f00d1b026d43e017839494615707-480-0.webp",
-     "url": "https://www.rumbahelguera.com.ar/"
-    },
-    {
-     "name": "Camisaco denim PIPER",
-     "price": 50000,
-     "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-18-01-37-72dc447c06a2a0a93d17839491236724-480-0.webp",
-     "url": "https://www.rumbahelguera.com.ar/"
-    },
-    {
-     "name": "Camisa gasa HAVEN c/bordado y piedras",
-     "price": 50000,
-     "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-57-47-773844bbc896ccbb7f17839486975594-480-0.webp",
-     "url": "https://www.rumbahelguera.com.ar/"
-    },
-    {
-     "name": "Camisa JILLIAN bordada",
-     "price": 43750,
-     "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-42-37-8519507c97e297df4917839464322511-480-0.webp",
-     "url": "https://www.rumbahelguera.com.ar/"
-    },
-    {
-     "name": "Camisa DAVE c/puntilla",
-     "price": 31250,
-     "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-32-41-606e2e2c1c2ceafa7317839453788550-480-0.webp",
-     "url": "https://www.rumbahelguera.com.ar/"
-    },
-    {
-     "name": "Camisa IHONE bordada",
-     "price": 31250,
-     "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-31-25-27e61941eaaaa07f7d17839447763132-480-0.webp",
-     "url": "https://www.rumbahelguera.com.ar/"
-    },
-    {
-     "name": "Camisaco jean ALLURA c/tachas",
-     "price": 43750,
-     "image": "https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-30-15-291d99750547fa7b2617839444655409-480-0.webp",
-     "url": "https://www.rumbahelguera.com.ar/"
-    }
-   ]
   }
- }
 }
