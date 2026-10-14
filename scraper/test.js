@@ -6,7 +6,7 @@ const ld = (items) => '<html>' + items.map(i => `<script type="application/ld+js
 const r = parseProducts(ld([{ n: 'Camisa Bordada VINARA - 70234', p: 31240 }, { n: 'Remera X', p: 100 }]), 'https://t/');
 assert(r.length === 2 && r[0].name === 'Camisa Bordada VINARA' && r[0].price === 31240, 'parser');
 // 2) descubrimiento de categorías
-const nav = '<a href="/camisas/">CAMISAS</a><a href="https://www.t.com/remeras/">REMERAS Y TOPS</a><a href="/remeras/tops/">Tops</a><a href="/descuentos/">Descuentos</a><a href="/contacto/">Contacto</a><a href="/kids/">Kids</a><a href="/productos/x/">Prod</a><a href="/camisas/">CAMISAS</a>';
+const nav = '<a href="/productos/">Ver colección</a><a href="/camisas/">CAMISAS</a><a href="/todo/">Productos</a><a href="https://www.t.com/remeras/">REMERAS Y TOPS</a><a href="/remeras/tops/">Tops</a><a href="/descuentos/">Descuentos</a><a href="/contacto/">Contacto</a><a href="/kids/">Kids</a><a href="/productos/x/">Prod</a><a href="/camisas/">CAMISAS</a>';
 const cats = discoverCategories(nav);
 assert(cats.length === 2 && cats[0].name === 'Camisas' && cats[1].path === '/remeras/', 'categorías: ' + JSON.stringify(cats));
 // 3) recorrido con paginación, 404 con productos de relleno y tope por categoría

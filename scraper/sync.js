@@ -13,12 +13,14 @@ const LIMITS = {
   timeoutMs: 20000,      // por pedido
   retries: 2,            // reintentos extra por pedido
   pauseMs: 700,          // pausa entre pedidos (no saturar la tienda)
-  maxPagesPerCategory: 15,
+  maxPagesPerCategory: 25,
   maxRequestsPerStore: 300,
   maxMsPerStore: 4 * 60 * 1000,
 };
 // Secciones que no son prendas del catálogo (promos que repiten productos, páginas informativas, etc.)
-const EXCLUDE = /descuent|oferta|liquidaci|cyber|nuev|new-|temporada|search|account|contact|donde|como-comprar|preguntas|politica|arrepent|fragancia|kids|carrito/i;
+// Incluye los enlaces genéricos que listan TODO el catálogo ("Ver colección", "Productos"): si entraran como categoría
+// se llevarían todos los productos y las categorías reales quedarían vacías.
+const EXCLUDE = /descuent|oferta|liquidaci|cyber|nuev|new-|temporada|search|account|contact|donde|como-comprar|preguntas|politica|arrepent|fragancia|kids|carrito|\/productos\/|ver\s+colec|ver\s+todo|todos?\s+los\s+productos|^productos$|^tienda$/i;
 const OUT = path.join(__dirname, '..', 'data', 'catalog.json');
 const STATUS = path.join(__dirname, '..', 'data', 'status.json');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
