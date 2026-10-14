@@ -138,7 +138,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
 <!-- ESCANER -->
 <section class="view" id="v-scan">
   <h1>Catálogo de las distribuidoras</h1>
-  <p class="mut">Acá ves el catálogo de cada distribuidora, ordenado como su tienda. Tocás "Elegir" en lo que te gusta, revisás en la tienda original qué talles hay y marcás los que vas a ofrecer. Después pasa al Estudio de imagen.</p>
+  <p class="mut">Acá ves el catálogo de cada distribuidora, ordenado como su tienda. Primero tildás los tipos de prenda que querés cargar. Después tocás "Elegir" en lo que te gusta: los talles que la tienda tiene disponibles vienen ya marcados y vos destildás los que no quieras ofrecer. Después pasa al Estudio de imagen.</p>
   <div class="grid split">
     <div class="frame">
       <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url" id="urlbar">Catálogo espejo</span><span class="ext" id="syncTag">Sincronizado hoy 03:00</span></div>
@@ -148,6 +148,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
         <span class="sp"></span>
         <button class="btn sm" id="syncNow" style="border:1px solid var(--line)">↻ Actualizar ahora</button>
       </div>
+      <div id="catSel" style="padding:8px 12px;border-bottom:1px solid var(--line)"></div>
       <div class="cathead">
         <input id="q" placeholder="Buscar prenda…" oninput="shown=24;renderScan()"><span class="small mut" id="cnt"></span>
         <span id="cats"></span>
@@ -155,7 +156,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
       </div>
       <div class="pcards" id="pcards"><div class="scanning" id="scanning">Actualizando catálogo…</div></div>
       <button class="btn" id="moreBtn" style="display:none;margin:0 12px 12px;width:calc(100% - 24px)" onclick="shown+=24;renderScan()">Ver más</button>
-      <div class="small mut" style="padding:0 12px 10px">Copia del catálogo real (nombre, precio y foto), actualizada una vez al día. El stock por talle lo confirmás vos en la tienda original con el link de cada producto.</div>
+      <div class="small mut" style="padding:0 12px 10px">Copia del catálogo real (nombre, precio y foto), actualizada una vez al día. Los talles son los que la tienda marca como disponibles (no informa cantidades): si dudás, usá "Revisar stock" en la tienda original.</div>
     </div>
     <div class="card">
       <h2>Mis elegidos</h2>
@@ -292,11 +293,20 @@ let S, tab='A', tmr=[];
 const IDS={A:[1,2,3,4,9,10,11,12],B:[5,6,7,8,13,14,15,16]};
 async function loadCatalog(){
  try{const r=await fetch('../data/catalog.json?'+Date.now());if(!r.ok)return;const c=await r.json();const np=[];let extra={A:100,B:300};
-  for(const k of ['A','B']){const st=c.stores&&c.stores[k];if(!st)continue;st.products.forEach((x,i)=>{const id=i<8?IDS[k][i]:(++extra[k]);np.push({id:id,name:x.name,src:k,cost:x.price,img:x.image,url:x.url,cat:x.cat||'',sz:{}})})}
+  for(const k of ['A','B']){const st=c.stores&&c.stores[k];if(!st)continue;st.products.forEach((x,i)=>{const id=i<8?IDS[k][i]:(++extra[k]);np.push({id:id,name:x.name,src:k,cost:x.price,img:x.image,url:x.url,cat:x.cat||'',avail:x.sz||null,sz:{}})})}
   if(np.length>=8){const keep={};P.forEach(p=>{if(p.sz&&Object.keys(p.sz).length)keep[p.id]=p.sz});P.length=0;np.forEach(p=>{if(keep[p.id])p.sz=keep[p.id];P.push(p)});if(c.updated){window.CAT_UPDATED=c.updated}}
   const t=$('#syncTag');if(t&&window.CAT_UPDATED)t.textContent='Catálogo del '+new Date(window.CAT_UPDATED).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  try{const rc=await fetch('../data/categories.json?'+Date.now());if(rc.ok){const cj=await rc.json();for(const k of ['A','B']){const st=cj.stores&&cj.stores[k];if(st)CATS[k]=st.categories.map(c=>({path:c.path,name:c.name}))}}}catch(e){}
+  try{if(!localStorage.getItem('catSel')){const rg=await fetch('../data/config.json?'+Date.now());if(rg.ok){const g=await rg.json();for(const k of ['A','B']){const ps=(g.categories&&g.categories[k])||[];SEL[k]=(CATS[k]||[]).filter(c=>ps.includes(c.path)).map(c=>c.name)}}}}catch(e){}
   renderAll()}catch(e){}
 }
+const CATS={A:null,B:null};let SEL={A:[],B:[]};
+try{const t=JSON.parse(localStorage.getItem('catSel')||'null');if(t&&t.A&&t.B)SEL=t}catch(e){}
+function saveSel(){try{localStorage.setItem('catSel',JSON.stringify(SEL))}catch(e){}}
+function catList(k){return CATS[k]?CATS[k].map(c=>c.name):[...new Set(P.filter(p=>p.src===k).map(p=>p.cat||'Otras'))]}
+function toggleCatSel(k,name){const a=SEL[k],i=a.indexOf(name);if(i>=0)a.splice(i,1);else a.push(name);saveSel();shown=24;cat='Todas';renderScan()}
+function allCatSel(k,on){SEL[k]=on?catList(k):[];saveSel();shown=24;cat='Todas';renderScan()}
+function copyCfg(){const o={categories:{A:[],B:[]}};for(const k of ['A','B'])o.categories[k]=(CATS[k]||[]).filter(c=>SEL[k].includes(c.name)).map(c=>c.path);const t=JSON.stringify(o,null,2);try{navigator.clipboard.writeText(t);toast('Selección copiada')}catch(e){prompt('Copiá esto',t)}}
 
 function init(){
  P.forEach(p=>p.sz={});
@@ -381,7 +391,9 @@ function renderScan(){
  $('#urlbar').textContent='Catálogo espejo de '+SRCURL[tab].replace('https://','');
  $$('#srcTabs button[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===tab));
  const real=$('#realLink');real.href=SRCURL[tab];
- const list=P.filter(p=>p.src===tab);
+ const all=catList(tab);
+ $('#catSel').innerHTML='<div class="small"><b>1 · ¿Qué tipos de prenda querés cargar?</b> <span class="mut">Tildá los que te interesan; solo esos se cargan y se muestran.</span> <button class="btn sm" onclick="allCatSel(\''+tab+'\',true)">Todos</button> <button class="btn sm" onclick="allCatSel(\''+tab+'\',false)">Ninguno</button> <button class="btn sm" onclick="copyCfg()" title="Copia la selección para la carga automática">Copiar selección</button></div><div style="margin-top:6px">'+all.map(c=>'<label style="display:inline-block;margin:0 10px 4px 0;font-size:12px;cursor:pointer"><input type="checkbox" '+(SEL[tab].includes(c)?'checked':'')+' onchange="toggleCatSel(\''+tab+'\',this.dataset.c)" data-c="'+c.replace(/"/g,'&quot;')+'"> '+c+'</label>').join('')+'</div>';
+ const list=P.filter(p=>p.src===tab&&SEL[tab].includes(catOf(p)));
  const cats=['Todas',...new Set(list.map(catOf))];if(!cats.includes(cat))cat='Todas';
  $('#cats').innerHTML=cats.map(c=>'<button class="cat '+(c===cat?'on':'')+'" data-c="'+c.replace(/"/g,'&quot;')+'">'+c+'</button>').join('');
  const q=($('#q').value||'').toLowerCase();
@@ -393,16 +405,17 @@ function renderScan(){
   const d=document.createElement('div');d.className='pc';
   const inb=S.captured.includes(p.id);
   d.onclick=e=>{if(e.target.tagName!=='BUTTON'&&e.target.tagName!=='A')openFicha(p.id)};
-  d.innerHTML='<div class="img">'+shirt(p,'orig')+'</div><div style="margin-top:6px"><b>'+p.name+'</b></div><div class="mut">Costo '+fmt(p.cost)+'</div>'+
+  d.innerHTML='<div class="img">'+shirt(p,'orig')+'</div><div style="margin-top:6px"><b>'+p.name+'</b></div><div class="mut">Costo '+fmt(p.cost)+'</div>'+(p.avail?'<div class="szrow">'+p.avail.map(z=>'<i>'+z+'</i>').join('')+'</div>':'<div class="small mut">Talles: revisar en la tienda</div>')+
    '<a class="btn sm" style="display:block;width:100%;margin-top:6px;text-decoration:none;text-align:center" href="'+(p.url||SRCURL[p.src])+'" target="_blank" rel="noopener" title="Abre la ficha en la tienda original para ver talles y stock">🔍 Revisar stock ↗</a>'+
    '<button class="btn '+(inb?'':'pri')+'" '+(inb?'disabled':'')+' onclick="capture('+p.id+')">'+(inb?'✓ Elegido':'Elegir para mi tienda')+'</button>';
   $('#pcards').appendChild(d);
  });
+ if(!list.length){const e=document.createElement('div');e.className='empty';e.style.gridColumn='1/-1';e.textContent='Tildá arriba al menos un tipo de prenda para ver sus productos.';$('#pcards').appendChild(e)}
  const more=$('#moreBtn');more.style.display=filtered.length>shown?'block':'none';more.textContent='Ver más ('+(filtered.length-shown)+' restantes)';
  const ib=$('#inbox');
  if(!S.captured.length){ib.innerHTML='<div class="empty">Todavía no elegiste productos. Tocá "Elegir para mi tienda" en los que te gusten.</div>';return}
  ib.innerHTML='<table>'+S.captured.map(id=>{const p=byId(id);
-  return '<tr><td><button class="btn sm" title="Quitar" onclick="removeItem('+id+')">✕</button></td><td>'+p.name+'<div class="small mut">'+SRCNAME[p.src]+' · '+fmt(p.cost)+' · <a href="'+(p.url||SRCURL[p.src])+'" target="_blank" rel="noopener">revisar stock ↗</a></div><div class="chips" style="margin-top:4px">'+SIZES.map(z=>'<span class="chip '+((S.offered[id]||[]).includes(z)?'on':'')+'" onclick="toggleSize('+id+',\''+z+'\')">'+z+'</span>').join('')+'</div></td><td>'+(S.detail[id]?'<span class="badge ok">Listo</span>':'<span class="badge">Marcá talles</span>')+'</td></tr>'}).join('')+'</table>';
+  return '<tr><td><button class="btn sm" title="Quitar" onclick="removeItem('+id+')">✕</button></td><td>'+p.name+'<div class="small mut">'+SRCNAME[p.src]+' · '+fmt(p.cost)+' · <a href="'+(p.url||SRCURL[p.src])+'" target="_blank" rel="noopener">revisar stock ↗</a></div><div class="chips" style="margin-top:4px">'+sizesOf(p).map(z=>'<span class="chip '+((S.offered[id]||[]).includes(z)?'on':'')+'" onclick="toggleSize('+id+',\''+z+'\')">'+z+'</span>').join('')+'</div></td><td>'+(S.detail[id]?'<span class="badge ok">Listo</span>':'<span class="badge">Marcá talles</span>')+'</td></tr>'}).join('')+'</table>';
 }
 function openFicha(id){
  const p=byId(id),inb=S.captured.includes(id);
@@ -414,15 +427,18 @@ function openFicha(id){
  $('#ovl').classList.add('on');
 }
 const SIZES=['S','M','L','XL','XXL'];
+const sizesOf=p=>p.avail&&p.avail.length?p.avail:SIZES;
 function capture(id){
  if(S.captured.includes(id))return;
- S.captured.push(id);S.selected.push(id);S.offered[id]=[];
- logAdd('Elegido: '+byId(id).name+' (falta marcar talles)');renderAll();
+ const pp=byId(id);S.captured.push(id);S.selected.push(id);S.offered[id]=[];
+ if(pp.avail&&pp.avail.length){S.offered[id]=pp.avail.slice();pp.sz={};pp.avail.forEach(x=>pp.sz[x]=1);S.detail[id]=true;S.img[id]={mode:'basic',state:'none',regen:0};logAdd('Elegido: '+pp.name+' (talles disponibles cargados: '+pp.avail.join(', ')+')')}
+ else logAdd('Elegido: '+pp.name+' (falta marcar talles)');
+ renderAll();
 }
 function toggleSize(id,sz){
  const o=S.offered[id]=S.offered[id]||[];const i=o.indexOf(sz);if(i>=0)o.splice(i,1);else o.push(sz);
- const p=byId(id);p.sz={};SIZES.filter(x=>o.includes(x)).forEach(x=>p.sz[x]=1);
- if(o.length){S.detail[id]=true;S.img[id]=S.img[id]||{mode:'basic',state:'none',regen:0};logAdd('Talles a ofrecer de '+p.name+': '+SIZES.filter(x=>o.includes(x)).join(', '))}
+ const p=byId(id);p.sz={};sizesOf(p).filter(x=>o.includes(x)).forEach(x=>p.sz[x]=1);
+ if(o.length){S.detail[id]=true;S.img[id]=S.img[id]||{mode:'basic',state:'none',regen:0};logAdd('Talles a ofrecer de '+p.name+': '+sizesOf(p).filter(x=>o.includes(x)).join(', '))}
  else{delete S.detail[id];delete S.img[id]}
  renderAll();
 }
@@ -611,6 +627,7 @@ function quickDemo(){
  const keep={brand:S.brand,color:S.color,platform:S.platform};init();Object.assign(S,keep);
  S.captured=P.filter(p=>p.id<=16).map(p=>p.id);S.selected=[1,2,4,5,7,8];
  S.selected.forEach(id=>{S.offered[id]=['S','M','L','XL'];byId(id).sz={S:1,M:1,L:1,XL:1};S.detail[id]=true;const ai=(id===1||id===4);S.img[id]={mode:ai?'ai':'basic',state:'approved',regen:0};if(ai)S.aiToday++;S.auth[id]=true});
+ SEL.A=catList('A');SEL.B=catList('B');saveSel();
  S.priceSeen=true;S.mode='visible';$('#pubMode').value='visible';
  S.published=S.selected.map(id=>({id:id,visible:id!==8}));
  logAdd('Demo completa cargada: 16 capturados, 6 elegidos, 6 publicados (1 en borrador)');
