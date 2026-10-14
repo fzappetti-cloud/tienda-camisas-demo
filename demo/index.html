@@ -149,11 +149,12 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
         <button class="btn sm" id="syncNow" style="border:1px solid var(--line)">↻ Actualizar ahora</button>
       </div>
       <div class="cathead">
-        <input id="q" placeholder="Buscar camisa…" oninput="renderScan()">
+        <input id="q" placeholder="Buscar prenda…" oninput="shown=24;renderScan()"><span class="small mut" id="cnt"></span>
         <span id="cats"></span>
         <a id="realLink" class="small" href="https://vintagebsas.com.ar" target="_blank" rel="noopener">Ver tienda original ↗</a>
       </div>
       <div class="pcards" id="pcards"><div class="scanning" id="scanning">Actualizando catálogo…</div></div>
+      <button class="btn" id="moreBtn" style="display:none;margin:0 12px 12px;width:calc(100% - 24px)" onclick="shown+=24;renderScan()">Ver más</button>
       <div class="small mut" style="padding:0 12px 10px">Copia del catálogo real (nombre, precio y foto), actualizada una vez al día. El stock por talle lo confirmás vos en la tienda original con el link de cada producto.</div>
     </div>
     <div class="card">
@@ -290,9 +291,9 @@ const byId=id=>P.find(p=>p.id===id);
 let S, tab='A', tmr=[];
 const IDS={A:[1,2,3,4,9,10,11,12],B:[5,6,7,8,13,14,15,16]};
 async function loadCatalog(){
- try{const r=await fetch('../data/catalog.json?'+Date.now());if(!r.ok)return;const c=await r.json();const np=[];
-  for(const k of ['A','B']){const st=c.stores&&c.stores[k];if(!st)continue;st.products.slice(0,8).forEach((x,i)=>{const old=P.find(p=>p.id===IDS[k][i]);np.push({id:IDS[k][i],name:x.name,src:k,cost:x.price,img:x.image,url:x.url,sz:{}})})}
-  if(np.length>=8){P.length=0;np.forEach(p=>P.push(p));if(c.updated){window.CAT_UPDATED=c.updated}}
+ try{const r=await fetch('../data/catalog.json?'+Date.now());if(!r.ok)return;const c=await r.json();const np=[];let extra={A:100,B:300};
+  for(const k of ['A','B']){const st=c.stores&&c.stores[k];if(!st)continue;st.products.forEach((x,i)=>{const id=i<8?IDS[k][i]:(++extra[k]);np.push({id:id,name:x.name,src:k,cost:x.price,img:x.image,url:x.url,cat:x.cat||'',sz:{}})})}
+  if(np.length>=8){const keep={};P.forEach(p=>{if(p.sz&&Object.keys(p.sz).length)keep[p.id]=p.sz});P.length=0;np.forEach(p=>{if(keep[p.id])p.sz=keep[p.id];P.push(p)});if(c.updated){window.CAT_UPDATED=c.updated}}
   const t=$('#syncTag');if(t&&window.CAT_UPDATED)t.textContent='Catálogo del '+new Date(window.CAT_UPDATED).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
   renderAll()}catch(e){}
 }
@@ -372,8 +373,8 @@ function renderDash(){
 }
 
 /* ---------- escáner ---------- */
-let cat='Todas';
-const catOf=p=>/rayad/i.test(p.name)?'Rayadas':/brod|bordad/i.test(p.name)?'Bordadas':/jean|denim/i.test(p.name)?'Denim':'Otras';
+let cat='Todas',shown=24;
+const catOf=p=>p.cat?p.cat:/rayad/i.test(p.name)?'Rayadas':/brod|bordad/i.test(p.name)?'Bordadas':/jean|denim/i.test(p.name)?'Denim':'Otras';
 const SRCURL={A:'https://vintagebsas.com.ar',B:'https://rumbahelguera.com.ar'};
 const SRCNAME={A:'Vintage BSAS',B:'Rumba Helguera'};
 function renderScan(){
@@ -382,11 +383,13 @@ function renderScan(){
  const real=$('#realLink');real.href=SRCURL[tab];
  const list=P.filter(p=>p.src===tab);
  const cats=['Todas',...new Set(list.map(catOf))];if(!cats.includes(cat))cat='Todas';
- $('#cats').innerHTML=cats.map(c=>'<button class="cat '+(c===cat?'on':'')+'" onclick="cat=\''+c+'\';renderScan()">'+c+'</button>').join('');
+ $('#cats').innerHTML=cats.map(c=>'<button class="cat '+(c===cat?'on':'')+'" data-c="'+c.replace(/"/g,'&quot;')+'">'+c+'</button>').join('');
  const q=($('#q').value||'').toLowerCase();
  const sc=$('#scanning');
  $('#pcards').innerHTML='';$('#pcards').appendChild(sc);
- list.filter(p=>(cat==='Todas'||catOf(p)===cat)&&p.name.toLowerCase().includes(q)).forEach(p=>{
+ const filtered=list.filter(p=>(cat==='Todas'||catOf(p)===cat)&&p.name.toLowerCase().includes(q));
+ $('#cnt').textContent=filtered.length+' productos';
+ filtered.slice(0,shown).forEach(p=>{
   const d=document.createElement('div');d.className='pc';
   const inb=S.captured.includes(p.id);
   d.onclick=e=>{if(e.target.tagName!=='BUTTON'&&e.target.tagName!=='A')openFicha(p.id)};
@@ -395,6 +398,7 @@ function renderScan(){
    '<button class="btn '+(inb?'':'pri')+'" '+(inb?'disabled':'')+' onclick="capture('+p.id+')">'+(inb?'✓ Elegido':'Elegir para mi tienda')+'</button>';
   $('#pcards').appendChild(d);
  });
+ const more=$('#moreBtn');more.style.display=filtered.length>shown?'block':'none';more.textContent='Ver más ('+(filtered.length-shown)+' restantes)';
  const ib=$('#inbox');
  if(!S.captured.length){ib.innerHTML='<div class="empty">Todavía no elegiste productos. Tocá "Elegir para mi tienda" en los que te gusten.</div>';return}
  ib.innerHTML='<table>'+S.captured.map(id=>{const p=byId(id);
@@ -428,7 +432,8 @@ $('#syncNow').addEventListener('click',()=>{
  later(()=>{sc.classList.remove('on');$('#syncNow').disabled=false;const t=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});$('#syncTag').textContent='Sincronizado hoy '+t;
   loadCatalog();logAdd('Catálogo actualizado: '+SRCNAME[tab]+' ('+P.filter(p=>p.src===tab).length+' productos)');renderAll();toast('Catálogo actualizado')},1200);
 });
-$('#srcTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-s]');if(b){tab=b.dataset.s;cat='Todas';renderScan()}});
+$('#srcTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-s]');if(b){tab=b.dataset.s;cat='Todas';shown=24;renderScan()}});
+$('#cats').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(b){cat=b.dataset.c;shown=24;renderScan()}});
 function clearInbox(){S.captured=[];S.selected=[];S.detail={};S.img={};S.offered={};P.forEach(p=>p.sz={});renderAll()}
 
 /* ---------- estudio ---------- */
@@ -604,11 +609,11 @@ $('#platform').addEventListener('change',e=>{S.platform=e.target.value;logAdd('P
 function quickDemo(){
  tmr.forEach(clearTimeout);tmr=[];
  const keep={brand:S.brand,color:S.color,platform:S.platform};init();Object.assign(S,keep);
- S.captured=P.map(p=>p.id);S.selected=[1,2,4,5,7,8];
+ S.captured=P.filter(p=>p.id<=16).map(p=>p.id);S.selected=[1,2,4,5,7,8];
  S.selected.forEach(id=>{S.offered[id]=['S','M','L','XL'];byId(id).sz={S:1,M:1,L:1,XL:1};S.detail[id]=true;const ai=(id===1||id===4);S.img[id]={mode:ai?'ai':'basic',state:'approved',regen:0};if(ai)S.aiToday++;S.auth[id]=true});
  S.priceSeen=true;S.mode='visible';$('#pubMode').value='visible';
  S.published=S.selected.map(id=>({id:id,visible:id!==8}));
- logAdd('Demo completa cargada: 8 capturados, 6 elegidos, 6 publicados (1 en borrador)');
+ logAdd('Demo completa cargada: 16 capturados, 6 elegidos, 6 publicados (1 en borrador)');
  show('dash');toast('Demo cargada. Probá la vista de tienda y los pedidos.');
 }
 function resetAll(){tmr.forEach(clearTimeout);tmr=[];const keep={brand:S.brand,color:S.color,platform:S.platform};init();Object.assign(S,keep);$('#plog').innerHTML='';$('#pprog').style.width='0';$('#dprog').style.width='0';closeCart();closeM();show('dash')}
