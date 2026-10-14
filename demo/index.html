@@ -48,7 +48,7 @@ table{width:100%;border-collapse:collapse} th,td{text-align:left;padding:8px;bor
 .tabs button{border:0;background:none;cursor:pointer;padding:5px 10px;border-radius:99px} .tabs button.on{background:#1f2328;color:#fff}
 .pcards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px;position:relative}
 .pc{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:12px}
-.img{aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:#eee} .img svg{width:100%;height:100%;display:block}
+.img{aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:#eee} .img svg{width:100%;height:100%;display:block} .img>img{width:100%;height:100%;object-fit:cover;display:block} .proc{width:100%;height:100%;display:grid;place-items:center;background:#f4f2ee} .proc img{width:88%;height:88%;object-fit:contain;mix-blend-mode:multiply} .proc.ai{background:radial-gradient(circle at 50% 40%,#fffdf9,#e7e1d6)} .proc.ai img{filter:drop-shadow(0 8px 8px rgba(0,0,0,.18)) contrast(1.05) saturate(1.05)}
 .pc .btn{width:100%;margin-top:6px}
 .cathead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--line)}.cathead input{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;width:150px}.cathead .small{margin-left:auto}.cat{border:1px solid var(--line);background:#fff;border-radius:99px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:4px}.cat.on{background:var(--brand);color:#fff;border-color:var(--brand)}.szrow{display:flex;gap:3px;justify-content:center;margin-top:4px}.szrow i{font-style:normal;font-size:10px;border:1px solid var(--line);border-radius:4px;padding:1px 5px}.szrow i.no{opacity:.35;text-decoration:line-through}.pc{cursor:pointer}
 .scanning{position:absolute;inset:0;background:rgba(255,255,255,.8);display:none;place-items:center;font-weight:600;color:var(--brand)}
@@ -256,7 +256,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
   <div class="grid g2" id="groups"></div>
 </section>
 
-<p class="small mut" style="margin-top:24px">Demo con datos e imágenes simulados. No se conecta a Tiendanube, WooCommerce, Mercado Pago ni Gemini. Los precios y comisiones son ejemplos.</p>
+<p class="small mut" style="margin-top:24px">Demo: nombres, precios y fotos del catálogo son reales (se muestran desde la tienda de origen); talles, stock, pedidos y cobros son simulados. No se conecta a Tiendanube, WooCommerce, Mercado Pago ni Gemini. Las comisiones son ejemplos.</p>
 </main>
 </div>
 
@@ -269,14 +269,22 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const fmt=n=>'$ '+Math.round(n).toLocaleString('es-AR');
 const SRC={A:'Distribuidora A (demo)',B:'Distribuidora B (demo)'};
 const P=[
- {id:1,name:'Camisa de lino arena',src:'A',cost:18000,color:'#d8c4a0',sz:{S:3,M:5,L:2,XL:0}},
- {id:2,name:'Camisa oxford celeste',src:'A',cost:16500,color:'#9fc0dd',sz:{S:2,M:4,L:4,XL:1}},
- {id:3,name:'Camisa satén marfil',src:'A',cost:21000,color:'#efe6d5',sz:{S:1,M:2,L:0,XL:0}},
- {id:4,name:'Camisa rayada azul',src:'A',cost:17500,color:'#7f9cc4',stripe:1,sz:{S:4,M:3,L:3,XL:2}},
- {id:5,name:'Camisa denim clara',src:'B',cost:19800,color:'#87a8c9',sz:{S:2,M:3,L:3,XL:1}},
- {id:6,name:'Camisa verde oliva',src:'B',cost:18900,color:'#7c8660',sz:{S:0,M:4,L:2,XL:2}},
- {id:7,name:'Camisa blanca clásica',src:'B',cost:15900,color:'#fafafa',sz:{S:5,M:6,L:4,XL:3}},
- {id:8,name:'Camisa bordó',src:'B',cost:20500,color:'#7a2f3b',sz:{S:2,M:2,L:1,XL:0}}
+ {id:1,name:"Camisa Broderie MASTACIA",src:'A',cost:31240,img:'https://acdn-us.mitiendanube.com/stores/574/291/products/img_0048-6da16a7b9105f2c55217842293829122-480-0.webp',sz:{'S': 3, 'M': 5, 'L': 2, 'XL': 0}},
+ {id:2,name:"Camisa Gasa Bordada POLKA",src:'A',cost:49990,img:'https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-16-jul-2026-14_27_47-10a55e4e20615ea23e17842283319951-480-0.webp',sz:{'S': 2, 'M': 4, 'L': 4, 'XL': 1}},
+ {id:3,name:"Camisa Bordada VINARA",src:'A',cost:31240,img:'https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-22-jul-2026-15_22_01-f2b7ca78750633308d17847447875625-480-0.webp',sz:{'S': 1, 'M': 2, 'L': 0, 'XL': 0}},
+ {id:4,name:"Camisa Bordada BELLIA",src:'A',cost:43740,img:'https://acdn-us.mitiendanube.com/stores/574/291/products/img_0212-e42c69b6db1777c68b17847354462493-480-0.webp',sz:{'S': 4, 'M': 3, 'L': 3, 'XL': 2}},
+ {id:9,name:"Camisa Rayada BILLY",src:'A',cost:31240,img:'https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-21-jul-2026-14_16_34-7e64b049fa420aa00517846543842509-480-0.webp',sz:{'S': 0, 'M': 4, 'L': 2, 'XL': 2}},
+ {id:10,name:"Camisa Bordada PALMERAS",src:'A',cost:31240,img:'https://acdn-us.mitiendanube.com/stores/574/291/products/img_0095-c5a6df6523b31657b817846528870030-480-0.webp',sz:{'S': 5, 'M': 6, 'L': 4, 'XL': 3}},
+ {id:11,name:"Camisa Lentejuelas Rayada VTK 2144",src:'A',cost:34990,img:'https://acdn-us.mitiendanube.com/stores/574/291/products/aeae6ee8-86ad-44ba-9add-ce92dfaac9d5-2e3c9a2b2500f0fec817235618602830-480-0.webp',sz:{'S': 2, 'M': 2, 'L': 1, 'XL': 0}},
+ {id:12,name:"Camisa Calada BERENICE",src:'A',cost:31240,img:'https://acdn-us.mitiendanube.com/stores/574/291/products/chatgpt-image-15-jul-2026-13_02_03-2bc5c869a1c74ca74917841313937084-480-0.webp',sz:{'S': 2, 'M': 3, 'L': 3, 'XL': 1}},
+ {id:5,name:"Camisa SORCHA jeans c/piedras",src:'B',cost:43750,img:'https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-18-05-26-062b94e6eb70f3f73a17839497474682-480-0.webp',sz:{'S': 3, 'M': 5, 'L': 2, 'XL': 0}},
+ {id:6,name:"Camisa ROWAM broderie",src:'B',cost:31250,img:'https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-18-02-50-92a4f00d1b026d43e017839494615707-480-0.webp',sz:{'S': 2, 'M': 4, 'L': 4, 'XL': 1}},
+ {id:7,name:"Camisaco denim PIPER",src:'B',cost:50000,img:'https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-18-01-37-72dc447c06a2a0a93d17839491236724-480-0.webp',sz:{'S': 1, 'M': 2, 'L': 0, 'XL': 0}},
+ {id:8,name:"Camisa gasa HAVEN c/bordado y piedras",src:'B',cost:50000,img:'https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-57-47-773844bbc896ccbb7f17839486975594-480-0.webp',sz:{'S': 4, 'M': 3, 'L': 3, 'XL': 2}},
+ {id:13,name:"Camisa JILLIAN bordada",src:'B',cost:43750,img:'https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-42-37-8519507c97e297df4917839464322511-480-0.webp',sz:{'S': 0, 'M': 4, 'L': 2, 'XL': 2}},
+ {id:14,name:"Camisa DAVE c/puntilla",src:'B',cost:31250,img:'https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-32-41-606e2e2c1c2ceafa7317839453788550-480-0.webp',sz:{'S': 5, 'M': 6, 'L': 4, 'XL': 3}},
+ {id:15,name:"Camisa IHONE bordada",src:'B',cost:31250,img:'https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-31-25-27e61941eaaaa07f7d17839447763132-480-0.webp',sz:{'S': 2, 'M': 2, 'L': 1, 'XL': 0}},
+ {id:16,name:"Camisaco jean ALLURA c/tachas",src:'B',cost:43750,img:'https://acdn-us.mitiendanube.com/stores/002/090/798/products/whatsapp-image-2026-07-12-at-17-30-15-291d99750547fa7b2617839444655409-480-0.webp',sz:{'S': 2, 'M': 3, 'L': 3, 'XL': 1}}
 ];
 const byId=id=>P.find(p=>p.id===id);
 let S, tab='A', tmr=[];
@@ -297,6 +305,8 @@ function later(fn,ms){const t=setTimeout(fn,ms);tmr.push(t);return t}
 
 /* ---------- ilustración de prenda ---------- */
 function shirt(p,mode){
+ if(p.img){if(mode==='orig')return '<img src="'+p.img+'" alt="'+p.name+'" loading="lazy" referrerpolicy="no-referrer">';
+  return '<div class="proc '+(mode==='ai'?'ai':'basic')+'"><img src="'+p.img+'" alt="" referrerpolicy="no-referrer"></div>'}
  let bg;
  if(mode==='orig') bg='<rect width="100" height="125" fill="#bdb8ae"/><circle cx="14" cy="20" r="11" fill="#a9a398"/><rect x="72" y="58" width="26" height="52" fill="#a39d92"/><rect x="0" y="108" width="100" height="17" fill="#8f897e"/>';
  else if(mode==='ai') bg='<defs><radialGradient id="gai" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#fffdf9"/><stop offset="1" stop-color="#e7e1d6"/></radialGradient></defs><rect width="100" height="125" fill="url(#gai)"/><ellipse cx="50" cy="117" rx="30" ry="4" fill="rgba(0,0,0,.14)"/>';
@@ -354,7 +364,7 @@ function renderDash(){
 
 /* ---------- escáner ---------- */
 let cat='Todas';
-const catOf=p=>p.stripe?'Rayadas':(/lino/i.test(p.name)?'Lino':'Lisas');
+const catOf=p=>/rayad/i.test(p.name)?'Rayadas':/brod|bordad/i.test(p.name)?'Bordadas':/jean|denim/i.test(p.name)?'Denim':'Otras';
 const SRCURL={A:'https://vintagebsas.com.ar',B:'https://rumbahelguera.com.ar'};
 const SRCNAME={A:'Vintage BSAS',B:'Rumba Helguera'};
 function renderScan(){
