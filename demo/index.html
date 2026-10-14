@@ -50,6 +50,7 @@ table{width:100%;border-collapse:collapse} th,td{text-align:left;padding:8px;bor
 .pc{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:12px}
 .img{aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:#eee} .img svg{width:100%;height:100%;display:block}
 .pc .btn{width:100%;margin-top:6px}
+.cathead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--line)}.cathead input{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;width:150px}.cathead .small{margin-left:auto}.cat{border:1px solid var(--line);background:#fff;border-radius:99px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:4px}.cat.on{background:var(--brand);color:#fff;border-color:var(--brand)}.szrow{display:flex;gap:3px;justify-content:center;margin-top:4px}.szrow i{font-style:normal;font-size:10px;border:1px solid var(--line);border-radius:4px;padding:1px 5px}.szrow i.no{opacity:.35;text-decoration:line-through}.pc{cursor:pointer}
 .scanning{position:absolute;inset:0;background:rgba(255,255,255,.8);display:none;place-items:center;font-weight:600;color:var(--brand)}
 .scanning.on{display:grid}
 .scanning::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--brand);animation:sweep 1s linear infinite}
@@ -106,7 +107,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
 <div class="layout">
 <nav class="side" id="nav">
   <button data-v="dash" class="on"><span class="n">1</span>Tablero</button>
-  <button data-v="scan"><span class="n">2</span>Escáner</button>
+  <button data-v="scan"><span class="n">2</span>Catálogo</button>
   <button data-v="studio"><span class="n">3</span>Estudio de imagen</button>
   <button data-v="price"><span class="n">4</span>Precios y marca</button>
   <button data-v="pub"><span class="n">5</span>Publicar</button>
@@ -136,19 +137,24 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
 
 <!-- ESCANER -->
 <section class="view" id="v-scan">
-  <h1>Escáner de productos</h1>
-  <p class="mut">Mirás el catálogo de la distribuidora acá adentro del tablero. Tocás "Elegir para mi tienda" y el sistema trae solo los talles, el stock y las fotos, sin salir de esta pantalla.</p>
+  <h1>Catálogo de las distribuidoras</h1>
+  <p class="mut">Acá ves el catálogo de cada distribuidora, ordenado como su tienda. Tocás "Elegir" en lo que te gusta y el sistema revalida precio y stock, y lo deja listo para el Estudio de imagen.</p>
   <div class="grid split">
     <div class="frame">
-      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url" id="urlbar">distribuidora-a.demo/camisas</span><span class="ext">En vivo dentro del tablero</span></div>
+      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url" id="urlbar">Catálogo espejo</span><span class="ext" id="syncTag">Sincronizado hoy 03:00</span></div>
       <div class="tabs" id="srcTabs">
-        <button data-s="A" class="on">Distribuidora A (demo)</button>
-        <button data-s="B">Distribuidora B (demo)</button>
+        <button data-s="A" class="on">Vintage BSAS</button>
+        <button data-s="B">Rumba Helguera</button>
         <span class="sp"></span>
-        <button class="btn sm" id="scanAll" style="border:1px solid var(--line)">Elegir toda la página</button>
+        <button class="btn sm" id="syncNow" style="border:1px solid var(--line)">↻ Actualizar ahora</button>
       </div>
-      <div class="small" style="padding:6px 12px"><a id="realLink" href="https://vintagebsas.com.ar" target="_blank" rel="noopener">Abrir tienda real</a> <span class="mut">(la demo muestra productos de ejemplo)</span></div>
-      <div class="pcards" id="pcards"><div class="scanning" id="scanning">Escaneando página…</div></div>
+      <div class="cathead">
+        <input id="q" placeholder="Buscar camisa…" oninput="renderScan()">
+        <span id="cats"></span>
+        <a id="realLink" class="small" href="https://vintagebsas.com.ar" target="_blank" rel="noopener">Ver tienda original ↗</a>
+      </div>
+      <div class="pcards" id="pcards"><div class="scanning" id="scanning">Actualizando catálogo…</div></div>
+      <div class="small mut" style="padding:0 12px 10px">Copia del catálogo real, actualizada una vez al día (costo mínimo). Al elegir un producto se revalida precio y stock al instante.</div>
     </div>
     <div class="card">
       <h2>Mis elegidos</h2>
@@ -156,8 +162,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
       <div class="row" style="margin-top:10px">
         <button class="btn" onclick="clearInbox()">Vaciar</button>
       </div>
-      <div class="prog" style="margin-top:10px;display:none"><i id="dprog"></i></div>
-      <p class="small mut" style="margin-top:6px">Se carga de a un producto, con pausa entre pedidos · máx. 3 reintentos por producto · sin bucles. Lo elegido pasa solo al Estudio de imagen.</p>
+      <p class="small mut" style="margin-top:6px">Se revalida de a un producto, con pausa entre pedidos · máx. 3 reintentos · sin bucles. Lo elegido pasa solo al Estudio de imagen.</p>
     </div>
   </div>
 </section>
@@ -348,23 +353,42 @@ function renderDash(){
 }
 
 /* ---------- escáner ---------- */
+let cat='Todas';
+const catOf=p=>p.stripe?'Rayadas':(/lino/i.test(p.name)?'Lino':'Lisas');
+const SRCURL={A:'https://vintagebsas.com.ar',B:'https://rumbahelguera.com.ar'};
+const SRCNAME={A:'Vintage BSAS',B:'Rumba Helguera'};
 function renderScan(){
- $('#urlbar').textContent=(tab==='A'?'distribuidora-a.demo/camisas':'distribuidora-b.demo/camisas');
+ $('#urlbar').textContent='Catálogo espejo de '+SRCURL[tab].replace('https://','');
  $$('#srcTabs button[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===tab));
- const real=$('#realLink');real.href=(tab==='A'?'https://vintagebsas.com.ar':'https://rumbahelguera.com.ar');real.textContent='Abrir tienda real: '+(tab==='A'?'vintagebsas.com.ar':'rumbahelguera.com.ar')+' ↗';
+ const real=$('#realLink');real.href=SRCURL[tab];
+ const list=P.filter(p=>p.src===tab);
+ const cats=['Todas',...new Set(list.map(catOf))];if(!cats.includes(cat))cat='Todas';
+ $('#cats').innerHTML=cats.map(c=>'<button class="cat '+(c===cat?'on':'')+'" onclick="cat=\''+c+'\';renderScan()">'+c+'</button>').join('');
+ const q=($('#q').value||'').toLowerCase();
  const sc=$('#scanning');
  $('#pcards').innerHTML='';$('#pcards').appendChild(sc);
- P.filter(p=>p.src===tab).forEach(p=>{
+ list.filter(p=>(cat==='Todas'||catOf(p)===cat)&&p.name.toLowerCase().includes(q)).forEach(p=>{
   const d=document.createElement('div');d.className='pc';
   const inb=S.captured.includes(p.id);
+  d.onclick=e=>{if(e.target.tagName!=='BUTTON')openFicha(p.id)};
   d.innerHTML='<div class="img">'+shirt(p,'orig')+'</div><div style="margin-top:6px"><b>'+p.name+'</b></div><div class="mut">Costo '+fmt(p.cost)+'</div>'+
+   '<div class="szrow">'+Object.keys(p.sz).map(k=>'<i class="'+(p.sz[k]?'':'no')+'">'+k+'</i>').join('')+'</div>'+
    '<button class="btn '+(inb?'':'pri')+'" '+(inb?'disabled':'')+' onclick="capture('+p.id+')">'+(inb?'✓ Elegido':'Elegir para mi tienda')+'</button>';
   $('#pcards').appendChild(d);
  });
  const ib=$('#inbox');
  if(!S.captured.length){ib.innerHTML='<div class="empty">Todavía no elegiste productos. Tocá "Elegir para mi tienda" en los que te gusten.</div>';return}
  ib.innerHTML='<table>'+S.captured.map(id=>{const p=byId(id);
-  return '<tr><td><button class="btn sm" title="Quitar" onclick="removeItem('+id+')">✕</button></td><td>'+p.name+'<div class="small mut">'+SRC[p.src]+' · '+fmt(p.cost)+'</div></td><td>'+(S.detail[id]?'<span class="badge ok">Listo</span>':'<span class="badge">Cargando talles y stock…</span>')+'</td></tr>'}).join('')+'</table>';
+  return '<tr><td><button class="btn sm" title="Quitar" onclick="removeItem('+id+')">✕</button></td><td>'+p.name+'<div class="small mut">'+SRCNAME[p.src]+' · '+fmt(p.cost)+'</div></td><td>'+(S.detail[id]?'<span class="badge ok">Listo</span>':'<span class="badge">Revalidando precio y stock…</span>')+'</td></tr>'}).join('')+'</table>';
+}
+function openFicha(id){
+ const p=byId(id),inb=S.captured.includes(id);
+ $('#modal').innerHTML='<div class="row" style="justify-content:space-between"><h2>'+p.name+'</h2><button class="btn sm" onclick="closeM()">✕</button></div>'+
+  '<div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px"><div class="img">'+shirt(p,'orig')+'</div><div>'+
+  '<div class="mut">'+SRCNAME[p.src]+' · '+catOf(p)+'</div><div style="font-size:20px;margin:4px 0"><b>'+fmt(p.cost)+'</b> <span class="small mut">costo</span></div>'+
+  '<table class="small"><tr><th>Talle</th><th>Stock</th></tr>'+Object.keys(p.sz).map(k=>'<tr><td>'+k+'</td><td>'+(p.sz[k]?p.sz[k]+' u.':'<span class="mut">sin stock</span>')+'</td></tr>').join('')+'</table>'+
+  '<button class="btn pri" style="width:100%;margin-top:10px" '+(inb?'disabled':'')+' onclick="capture('+id+');closeM()">'+(inb?'✓ Elegido':'Elegir para mi tienda')+'</button></div></div>';
+ $('#ovl').classList.add('on');
 }
 function capture(id){
  if(S.captured.includes(id))return;
@@ -385,20 +409,19 @@ function runQueue(){
  },900);
 }
 function removeItem(id){S.captured=S.captured.filter(x=>x!==id);S.selected=S.selected.filter(x=>x!==id);delete S.detail[id];delete S.img[id];renderAll()}
-$('#srcTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-s]');if(b){tab=b.dataset.s;renderScan()}});
-$('#scanAll').addEventListener('click',()=>{
- const ids=P.filter(p=>p.src===tab&&!S.captured.includes(p.id));
- if(!ids.length){toast('Ya elegiste todos los de esta página');return}
- ids.forEach(p=>{S.captured.push(p.id);S.selected.push(p.id);queue.push(p.id)});
- logAdd('Elegidos todos los productos de '+SRC[tab]+': '+ids.length);renderAll();runQueue();
+$('#syncNow').addEventListener('click',()=>{
+ const sc=$('#scanning');sc.classList.add('on');$('#syncNow').disabled=true;
+ later(()=>{sc.classList.remove('on');$('#syncNow').disabled=false;const t=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});$('#syncTag').textContent='Sincronizado hoy '+t;
+  logAdd('Catálogo actualizado: '+SRCNAME[tab]+' ('+P.filter(p=>p.src===tab).length+' productos)');renderAll();toast('Catálogo actualizado')},1200);
 });
+$('#srcTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-s]');if(b){tab=b.dataset.s;cat='Todas';renderScan()}});
 function clearInbox(){S.captured=[];S.selected=[];S.detail={};S.img={};queue.length=0;renderAll()}
 
 /* ---------- estudio ---------- */
 function renderStudio(){
  $('#aiCount').textContent=S.aiToday;$('#aiCost').textContent='USD '+(S.aiToday*0.034).toFixed(2).replace('.',',');
  const ids=S.selected.filter(id=>S.detail[id]);
- if(!ids.length){$('#studioList').innerHTML='<div class="empty">Elegí productos en el Escáner y aparecen acá solos.</div>';return}
+ if(!ids.length){$('#studioList').innerHTML='<div class="empty">Elegí productos en el Catálogo y aparecen acá solos.</div>';return}
  $('#studioList').innerHTML=ids.map(id=>{const p=byId(id),im=S.img[id];
   let res;
   if(im.state==='processing')res='<div class="img" style="display:grid;place-items:center"><div class="spin"></div></div>';
