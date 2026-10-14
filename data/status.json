@@ -1,13 +1,151 @@
 {
-  "run": "2026-10-14T14:13:49.957Z",
+  "run": "2026-10-14T14:40:33.902Z",
   "stores": {
     "A": {
       "ok": true,
-      "count": 8
+      "count": 306,
+      "requests": 51,
+      "categories": [
+        {
+          "category": "Ver coleccion",
+          "path": "/productos/",
+          "count": 180
+        },
+        {
+          "category": "Sastreria",
+          "path": "/sastreria/",
+          "count": 13
+        },
+        {
+          "category": "Conjuntos",
+          "path": "/conjuntos/",
+          "count": 5
+        },
+        {
+          "category": "Blusas",
+          "path": "/camisolas/",
+          "count": 0
+        },
+        {
+          "category": "Camisas",
+          "path": "/camisas/",
+          "count": 0
+        },
+        {
+          "category": "Chaquetas - blazers - kimonos",
+          "path": "/kimonos/",
+          "count": 30
+        },
+        {
+          "category": "Chalecos",
+          "path": "/chalecos/",
+          "count": 14
+        },
+        {
+          "category": "Remeras y tops",
+          "path": "/remeras/",
+          "count": 0
+        },
+        {
+          "category": "Musculosas",
+          "path": "/musculosas/",
+          "count": 0
+        },
+        {
+          "category": "Vestidos y monos",
+          "path": "/vestidos1/",
+          "count": 0
+        },
+        {
+          "category": "Buzos y camperitas engomadas",
+          "path": "/buzos-y-camperitas-engomadas/",
+          "count": 7
+        },
+        {
+          "category": "Night collection",
+          "path": "/linea-noche/",
+          "count": 0
+        },
+        {
+          "category": "Capsula talles grandes",
+          "path": "/linea-big-size1/",
+          "count": 32
+        },
+        {
+          "category": "Pantalones y polleras",
+          "path": "/partes-de-abajo/",
+          "count": 0
+        },
+        {
+          "category": "Buzos y cardigans",
+          "path": "/buzos/",
+          "count": 14
+        },
+        {
+          "category": "Sweaters",
+          "path": "/sweaters/",
+          "count": 0
+        },
+        {
+          "category": "Camperas",
+          "path": "/camperas/",
+          "count": 11
+        }
+      ],
+      "errors": []
     },
     "B": {
       "ok": true,
-      "count": 8
+      "count": 207,
+      "requests": 28,
+      "categories": [
+        {
+          "category": "Productos",
+          "path": "/productos/",
+          "count": 180
+        },
+        {
+          "category": "Remeras y musculosas",
+          "path": "/remeras1/",
+          "count": 0
+        },
+        {
+          "category": "Camisas y blusas",
+          "path": "/camisas-y-blusas/",
+          "count": 0
+        },
+        {
+          "category": "Vestidos importados",
+          "path": "/vestidos/",
+          "count": 0
+        },
+        {
+          "category": "Fiesta",
+          "path": "/fiesta/",
+          "count": 0
+        },
+        {
+          "category": "Abrigos",
+          "path": "/abrigos/",
+          "count": 0
+        },
+        {
+          "category": "Sastreria",
+          "path": "/sastreria1/",
+          "count": 8
+        },
+        {
+          "category": "Partes de abajo",
+          "path": "/pantalones/",
+          "count": 0
+        },
+        {
+          "category": "Kimonos",
+          "path": "/kimonos/",
+          "count": 19
+        }
+      ],
+      "errors": []
     }
   }
 }
