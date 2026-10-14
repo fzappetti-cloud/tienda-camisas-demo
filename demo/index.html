@@ -137,28 +137,27 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
 <!-- ESCANER -->
 <section class="view" id="v-scan">
   <h1>Escáner de productos</h1>
-  <p class="mut">Navegás la página de la distribuidora como siempre. La extensión agrega un botón en cada producto.</p>
+  <p class="mut">Mirás el catálogo de la distribuidora acá adentro del tablero. Tocás "Elegir para mi tienda" y el sistema trae solo los talles, el stock y las fotos, sin salir de esta pantalla.</p>
   <div class="grid split">
     <div class="frame">
-      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url" id="urlbar">distribuidora-a.demo/camisas</span><span class="ext">Agregar a mi tienda</span></div>
+      <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url" id="urlbar">distribuidora-a.demo/camisas</span><span class="ext">En vivo dentro del tablero</span></div>
       <div class="tabs" id="srcTabs">
         <button data-s="A" class="on">Distribuidora A (demo)</button>
         <button data-s="B">Distribuidora B (demo)</button>
         <span class="sp"></span>
-        <button class="btn sm" id="scanAll" style="border:1px solid var(--line)">Escanear toda la página</button>
+        <button class="btn sm" id="scanAll" style="border:1px solid var(--line)">Elegir toda la página</button>
       </div>
       <div class="small" style="padding:6px 12px"><a id="realLink" href="https://vintagebsas.com.ar" target="_blank" rel="noopener">Abrir tienda real</a> <span class="mut">(la demo muestra productos de ejemplo)</span></div>
       <div class="pcards" id="pcards"><div class="scanning" id="scanning">Escaneando página…</div></div>
     </div>
     <div class="card">
-      <h2>Bandeja de captura</h2>
+      <h2>Mis elegidos</h2>
       <div id="inbox"></div>
       <div class="row" style="margin-top:10px">
-        <button class="btn pri" id="getDetail">Traer detalle de elegidos</button>
         <button class="btn" onclick="clearInbox()">Vaciar</button>
       </div>
-      <div class="prog" style="margin-top:10px"><i id="dprog"></i></div>
-      <p class="small mut" style="margin-top:6px">Lotes de hasta 20 productos · pausa entre pedidos · máx. 3 reintentos por producto · sin bucles.</p>
+      <div class="prog" style="margin-top:10px;display:none"><i id="dprog"></i></div>
+      <p class="small mut" style="margin-top:6px">Se carga de a un producto, con pausa entre pedidos · máx. 3 reintentos por producto · sin bucles. Lo elegido pasa solo al Estudio de imagen.</p>
     </div>
   </div>
 </section>
@@ -359,44 +358,47 @@ function renderScan(){
   const d=document.createElement('div');d.className='pc';
   const inb=S.captured.includes(p.id);
   d.innerHTML='<div class="img">'+shirt(p,'orig')+'</div><div style="margin-top:6px"><b>'+p.name+'</b></div><div class="mut">Costo '+fmt(p.cost)+'</div>'+
-   '<button class="btn '+(inb?'':'pri')+'" '+(inb?'disabled':'')+' onclick="capture('+p.id+')">'+(inb?'✓ En bandeja':'Agregar a mi tienda')+'</button>';
+   '<button class="btn '+(inb?'':'pri')+'" '+(inb?'disabled':'')+' onclick="capture('+p.id+')">'+(inb?'✓ Elegido':'Elegir para mi tienda')+'</button>';
   $('#pcards').appendChild(d);
  });
  const ib=$('#inbox');
- if(!S.captured.length){ib.innerHTML='<div class="empty">Todavía no capturaste productos.</div>';return}
+ if(!S.captured.length){ib.innerHTML='<div class="empty">Todavía no elegiste productos. Tocá "Elegir para mi tienda" en los que te gusten.</div>';return}
  ib.innerHTML='<table>'+S.captured.map(id=>{const p=byId(id);
-  return '<tr><td><input type="checkbox" '+(S.selected.includes(id)?'checked':'')+' onchange="toggleSel('+id+',this.checked)"></td><td>'+p.name+'<div class="small mut">'+SRC[p.src]+' · '+fmt(p.cost)+'</div></td><td>'+(S.detail[id]?'<span class="badge ok">Detalle ok</span>':'<span class="badge">Capturado</span>')+'</td></tr>'}).join('')+'</table>';
+  return '<tr><td><button class="btn sm" title="Quitar" onclick="removeItem('+id+')">✕</button></td><td>'+p.name+'<div class="small mut">'+SRC[p.src]+' · '+fmt(p.cost)+'</div></td><td>'+(S.detail[id]?'<span class="badge ok">Listo</span>':'<span class="badge">Cargando talles y stock…</span>')+'</td></tr>'}).join('')+'</table>';
 }
-function capture(id){if(!S.captured.includes(id)){S.captured.push(id);logAdd('Capturado: '+byId(id).name);toast('Agregado a la bandeja');renderAll()}}
+function capture(id){
+ if(S.captured.includes(id))return;
+ S.captured.push(id);S.selected.push(id);queue.push(id);
+ logAdd('Elegido: '+byId(id).name);renderAll();runQueue();
+}
+/* carga automática de detalle (talles/stock): de a uno, máx. 3 reintentos, sin bucles */
+const queue=[];let working=false;const tries={};
+function runQueue(){
+ if(working)return;
+ const id=queue.shift();if(id===undefined)return;
+ if(!S.captured.includes(id)){runQueue();return}
+ working=true;
+ later(()=>{
+  if(id===6&&!tries[6]){tries[6]=1;logAdd('Reintento 1/3: '+byId(id).name+' (timeout 15 s)');queue.unshift(id);working=false;renderAll();runQueue();return}
+  if(S.captured.includes(id)){S.detail[id]=true;S.img[id]=S.img[id]||{mode:'basic',state:'none',regen:0};logAdd('Detalle cargado: talles y stock de '+byId(id).name)}
+  working=false;renderAll();runQueue();
+ },900);
+}
+function removeItem(id){S.captured=S.captured.filter(x=>x!==id);S.selected=S.selected.filter(x=>x!==id);delete S.detail[id];delete S.img[id];renderAll()}
 $('#srcTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-s]');if(b){tab=b.dataset.s;renderScan()}});
 $('#scanAll').addEventListener('click',()=>{
- const sc=$('#scanning');sc.classList.add('on');
- later(()=>{sc.classList.remove('on');P.filter(p=>p.src===tab).forEach(p=>{if(!S.captured.includes(p.id))S.captured.push(p.id)});
-  logAdd('Escaneada la página de '+SRC[tab]+': '+P.filter(p=>p.src===tab).length+' productos');renderAll();toast('Página escaneada')},1000);
+ const ids=P.filter(p=>p.src===tab&&!S.captured.includes(p.id));
+ if(!ids.length){toast('Ya elegiste todos los de esta página');return}
+ ids.forEach(p=>{S.captured.push(p.id);S.selected.push(p.id);queue.push(p.id)});
+ logAdd('Elegidos todos los productos de '+SRC[tab]+': '+ids.length);renderAll();runQueue();
 });
-function toggleSel(id,on){S.selected=S.selected.filter(x=>x!==id);if(on)S.selected.push(id);renderAll()}
-function clearInbox(){S.captured=[];S.selected=[];S.detail={};S.img={};renderAll()}
-$('#getDetail').addEventListener('click',()=>{
- const todo=S.selected.filter(id=>!S.detail[id]);
- if(!S.selected.length){toast('Elegí al menos un producto de la bandeja');return}
- if(!todo.length){toast('Los elegidos ya tienen detalle');return}
- if(todo.length>20){toast('Máximo 20 por lote');return}
- let i=0;const bar=$('#dprog');bar.style.width='0';
- $('#getDetail').disabled=true;
- (function next(){
-  if(i>=todo.length){$('#getDetail').disabled=false;logAdd('Detalle completo: talles y stock de '+todo.length+' producto(s)');renderAll();toast('Detalle listo');return}
-  const id=todo[i];
-  if(id===6&&!next.r){next.r=1;logAdd('Reintento 1/3: '+byId(id).name+' (timeout 15 s)');later(next,500);return}
-  S.detail[id]=true;S.img[id]=S.img[id]||{mode:'basic',state:'none',regen:0};
-  i++;bar.style.width=Math.round(i/todo.length*100)+'%';renderAll();later(next,450);
- })();
-});
+function clearInbox(){S.captured=[];S.selected=[];S.detail={};S.img={};queue.length=0;renderAll()}
 
 /* ---------- estudio ---------- */
 function renderStudio(){
  $('#aiCount').textContent=S.aiToday;$('#aiCost').textContent='USD '+(S.aiToday*0.034).toFixed(2).replace('.',',');
  const ids=S.selected.filter(id=>S.detail[id]);
- if(!ids.length){$('#studioList').innerHTML='<div class="empty">Elegí productos y traé su detalle en el Escáner.</div>';return}
+ if(!ids.length){$('#studioList').innerHTML='<div class="empty">Elegí productos en el Escáner y aparecen acá solos.</div>';return}
  $('#studioList').innerHTML=ids.map(id=>{const p=byId(id),im=S.img[id];
   let res;
   if(im.state==='processing')res='<div class="img" style="display:grid;place-items:center"><div class="spin"></div></div>';
