@@ -138,7 +138,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
 <!-- ESCANER -->
 <section class="view" id="v-scan">
   <h1>Catálogo de las distribuidoras</h1>
-  <p class="mut">Acá ves el catálogo de cada distribuidora, ordenado como su tienda. Tocás "Elegir" en lo que te gusta y el sistema revalida precio y stock, y lo deja listo para el Estudio de imagen.</p>
+  <p class="mut">Acá ves el catálogo de cada distribuidora, ordenado como su tienda. Tocás "Elegir" en lo que te gusta, revisás en la tienda original qué talles hay y marcás los que vas a ofrecer. Después pasa al Estudio de imagen.</p>
   <div class="grid split">
     <div class="frame">
       <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url" id="urlbar">Catálogo espejo</span><span class="ext" id="syncTag">Sincronizado hoy 03:00</span></div>
@@ -154,7 +154,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
         <a id="realLink" class="small" href="https://vintagebsas.com.ar" target="_blank" rel="noopener">Ver tienda original ↗</a>
       </div>
       <div class="pcards" id="pcards"><div class="scanning" id="scanning">Actualizando catálogo…</div></div>
-      <div class="small mut" style="padding:0 12px 10px">Copia del catálogo real, actualizada una vez al día (costo mínimo). Al elegir un producto se revalida precio y stock al instante.</div>
+      <div class="small mut" style="padding:0 12px 10px">Copia del catálogo real (nombre, precio y foto), actualizada una vez al día. El stock por talle lo confirmás vos en la tienda original con el link de cada producto.</div>
     </div>
     <div class="card">
       <h2>Mis elegidos</h2>
@@ -162,7 +162,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
       <div class="row" style="margin-top:10px">
         <button class="btn" onclick="clearInbox()">Vaciar</button>
       </div>
-      <p class="small mut" style="margin-top:6px">Se revalida de a un producto, con pausa entre pedidos · máx. 3 reintentos · sin bucles. Lo elegido pasa solo al Estudio de imagen.</p>
+      <p class="small mut" style="margin-top:6px">Marcá los talles que podés ofrecer (los confirmás en la tienda original). Con al menos un talle, el producto pasa al Estudio de imagen.</p>
     </div>
   </div>
 </section>
@@ -291,14 +291,15 @@ let S, tab='A', tmr=[];
 const IDS={A:[1,2,3,4,9,10,11,12],B:[5,6,7,8,13,14,15,16]};
 async function loadCatalog(){
  try{const r=await fetch('../data/catalog.json?'+Date.now());if(!r.ok)return;const c=await r.json();const np=[];
-  for(const k of ['A','B']){const st=c.stores&&c.stores[k];if(!st)continue;st.products.slice(0,8).forEach((x,i)=>{const old=P.find(p=>p.id===IDS[k][i]);np.push({id:IDS[k][i],name:x.name,src:k,cost:x.price,img:x.image,url:x.url,sz:old?old.sz:{S:2,M:3,L:2,XL:1}})})}
+  for(const k of ['A','B']){const st=c.stores&&c.stores[k];if(!st)continue;st.products.slice(0,8).forEach((x,i)=>{const old=P.find(p=>p.id===IDS[k][i]);np.push({id:IDS[k][i],name:x.name,src:k,cost:x.price,img:x.image,url:x.url,sz:{}})})}
   if(np.length>=8){P.length=0;np.forEach(p=>P.push(p));if(c.updated){window.CAT_UPDATED=c.updated}}
   const t=$('#syncTag');if(t&&window.CAT_UPDATED)t.textContent='Catálogo del '+new Date(window.CAT_UPDATED).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
   renderAll()}catch(e){}
 }
 
 function init(){
- S={brand:'Tu Marca',color:'#8a4b3c',platform:'tn',captured:[],selected:[],detail:{},img:{},mult:2,round:500,feeTn:2,feeMp:5,
+ P.forEach(p=>p.sz={});
+ S={offered:{},brand:'Tu Marca',color:'#8a4b3c',platform:'tn',captured:[],selected:[],detail:{},img:{},mult:2,round:500,feeTn:2,feeMp:5,
   over:{},auth:{},mode:'draft',published:[],aiToday:0,log:[],cart:[],priceSeen:false,minBuy:125000,
   orders:[
    {id:1001,buyer:'María G.',zone:'Córdoba Capital – centro',items:[{id:1,size:'M',qty:2},{id:4,size:'L',qty:3}],status:'pagado',bought:{}},
@@ -359,7 +360,7 @@ function renderDash(){
  const rd=ready().length, pend=S.orders.filter(o=>o.status!=='comprado').length;
  $('#kpis').innerHTML=[['Capturados',S.captured.length],['Elegidos',S.selected.length],['Listos para publicar',rd],['Publicados',S.published.length],['Pedidos por comprar',pend]]
   .map(a=>'<div class="card kpi"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>').join('');
- const st=[['1 · Escanear',S.captured.length>0],['2 · Elegir y traer detalle',S.selected.length>0&&S.selected.every(i=>S.detail[i])],['3 · Fotos',rd>0],['4 · Precios',S.priceSeen&&rd>0],['5 · Publicar',S.published.length>0],['6 · Vender y comprar',S.orders.some(o=>o.status==='comprado')]];
+ const st=[['1 · Escanear',S.captured.length>0],['2 · Elegir y validar talles',S.selected.length>0&&S.selected.every(i=>S.detail[i])],['3 · Fotos',rd>0],['4 · Precios',S.priceSeen&&rd>0],['5 · Publicar',S.published.length>0],['6 · Vender y comprar',S.orders.some(o=>o.status==='comprado')]];
  let act=st.findIndex(s=>!s[1]);
  $('#steps').innerHTML=st.map((s,i)=>'<div class="step '+(s[1]?'done':i===act?'act':'')+'"><b>'+s[0]+'</b>'+(s[1]?'Listo ✓':i===act?'Siguiente paso':'Pendiente')+'</div>').join('');
  const usd=S.aiToday*0.034;
@@ -388,58 +389,53 @@ function renderScan(){
  list.filter(p=>(cat==='Todas'||catOf(p)===cat)&&p.name.toLowerCase().includes(q)).forEach(p=>{
   const d=document.createElement('div');d.className='pc';
   const inb=S.captured.includes(p.id);
-  d.onclick=e=>{if(e.target.tagName!=='BUTTON')openFicha(p.id)};
+  d.onclick=e=>{if(e.target.tagName!=='BUTTON'&&e.target.tagName!=='A')openFicha(p.id)};
   d.innerHTML='<div class="img">'+shirt(p,'orig')+'</div><div style="margin-top:6px"><b>'+p.name+'</b></div><div class="mut">Costo '+fmt(p.cost)+'</div>'+
-   '<div class="szrow">'+Object.keys(p.sz).map(k=>'<i class="'+(p.sz[k]?'':'no')+'">'+k+'</i>').join('')+'</div>'+
+   '<a class="btn sm" style="display:block;width:100%;margin-top:6px;text-decoration:none;text-align:center" href="'+(p.url||SRCURL[p.src])+'" target="_blank" rel="noopener" title="Abre la ficha en la tienda original para ver talles y stock">🔍 Revisar stock ↗</a>'+
    '<button class="btn '+(inb?'':'pri')+'" '+(inb?'disabled':'')+' onclick="capture('+p.id+')">'+(inb?'✓ Elegido':'Elegir para mi tienda')+'</button>';
   $('#pcards').appendChild(d);
  });
  const ib=$('#inbox');
  if(!S.captured.length){ib.innerHTML='<div class="empty">Todavía no elegiste productos. Tocá "Elegir para mi tienda" en los que te gusten.</div>';return}
  ib.innerHTML='<table>'+S.captured.map(id=>{const p=byId(id);
-  return '<tr><td><button class="btn sm" title="Quitar" onclick="removeItem('+id+')">✕</button></td><td>'+p.name+'<div class="small mut">'+SRCNAME[p.src]+' · '+fmt(p.cost)+'</div></td><td>'+(S.detail[id]?'<span class="badge ok">Listo</span>':'<span class="badge">Revalidando precio y stock…</span>')+'</td></tr>'}).join('')+'</table>';
+  return '<tr><td><button class="btn sm" title="Quitar" onclick="removeItem('+id+')">✕</button></td><td>'+p.name+'<div class="small mut">'+SRCNAME[p.src]+' · '+fmt(p.cost)+' · <a href="'+(p.url||SRCURL[p.src])+'" target="_blank" rel="noopener">revisar stock ↗</a></div><div class="chips" style="margin-top:4px">'+SIZES.map(z=>'<span class="chip '+((S.offered[id]||[]).includes(z)?'on':'')+'" onclick="toggleSize('+id+',\''+z+'\')">'+z+'</span>').join('')+'</div></td><td>'+(S.detail[id]?'<span class="badge ok">Listo</span>':'<span class="badge">Marcá talles</span>')+'</td></tr>'}).join('')+'</table>';
 }
 function openFicha(id){
  const p=byId(id),inb=S.captured.includes(id);
  $('#modal').innerHTML='<div class="row" style="justify-content:space-between"><h2>'+p.name+'</h2><button class="btn sm" onclick="closeM()">✕</button></div>'+
   '<div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px"><div class="img">'+shirt(p,'orig')+'</div><div>'+
   '<div class="mut">'+SRCNAME[p.src]+' · '+catOf(p)+'</div><div style="font-size:20px;margin:4px 0"><b>'+fmt(p.cost)+'</b> <span class="small mut">costo</span></div>'+
-  '<table class="small"><tr><th>Talle</th><th>Stock</th></tr>'+Object.keys(p.sz).map(k=>'<tr><td>'+k+'</td><td>'+(p.sz[k]?p.sz[k]+' u.':'<span class="mut">sin stock</span>')+'</td></tr>').join('')+'</table>'+
+  '<p class="small mut">El stock por talle cambia todos los días: confirmalo en la tienda original antes de ofrecerlo.</p><a class="btn" style="display:block;text-align:center;text-decoration:none" href="'+(p.url||SRCURL[p.src])+'" target="_blank" rel="noopener">🔍 Revisar stock en la tienda ↗</a>'+
   '<button class="btn pri" style="width:100%;margin-top:10px" '+(inb?'disabled':'')+' onclick="capture('+id+');closeM()">'+(inb?'✓ Elegido':'Elegir para mi tienda')+'</button></div></div>';
  $('#ovl').classList.add('on');
 }
+const SIZES=['S','M','L','XL','XXL'];
 function capture(id){
  if(S.captured.includes(id))return;
- S.captured.push(id);S.selected.push(id);queue.push(id);
- logAdd('Elegido: '+byId(id).name);renderAll();runQueue();
+ S.captured.push(id);S.selected.push(id);S.offered[id]=[];
+ logAdd('Elegido: '+byId(id).name+' (falta marcar talles)');renderAll();
 }
-/* carga automática de detalle (talles/stock): de a uno, máx. 3 reintentos, sin bucles */
-const queue=[];let working=false;const tries={};
-function runQueue(){
- if(working)return;
- const id=queue.shift();if(id===undefined)return;
- if(!S.captured.includes(id)){runQueue();return}
- working=true;
- later(()=>{
-  if(id===6&&!tries[6]){tries[6]=1;logAdd('Reintento 1/3: '+byId(id).name+' (timeout 15 s)');queue.unshift(id);working=false;renderAll();runQueue();return}
-  if(S.captured.includes(id)){S.detail[id]=true;S.img[id]=S.img[id]||{mode:'basic',state:'none',regen:0};logAdd('Detalle cargado: talles y stock de '+byId(id).name)}
-  working=false;renderAll();runQueue();
- },900);
+function toggleSize(id,sz){
+ const o=S.offered[id]=S.offered[id]||[];const i=o.indexOf(sz);if(i>=0)o.splice(i,1);else o.push(sz);
+ const p=byId(id);p.sz={};SIZES.filter(x=>o.includes(x)).forEach(x=>p.sz[x]=1);
+ if(o.length){S.detail[id]=true;S.img[id]=S.img[id]||{mode:'basic',state:'none',regen:0};logAdd('Talles a ofrecer de '+p.name+': '+SIZES.filter(x=>o.includes(x)).join(', '))}
+ else{delete S.detail[id];delete S.img[id]}
+ renderAll();
 }
-function removeItem(id){S.captured=S.captured.filter(x=>x!==id);S.selected=S.selected.filter(x=>x!==id);delete S.detail[id];delete S.img[id];renderAll()}
+function removeItem(id){S.captured=S.captured.filter(x=>x!==id);S.selected=S.selected.filter(x=>x!==id);delete S.detail[id];delete S.img[id];delete S.offered[id];byId(id).sz={};renderAll()}
 $('#syncNow').addEventListener('click',()=>{
  const sc=$('#scanning');sc.classList.add('on');$('#syncNow').disabled=true;
  later(()=>{sc.classList.remove('on');$('#syncNow').disabled=false;const t=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});$('#syncTag').textContent='Sincronizado hoy '+t;
   loadCatalog();logAdd('Catálogo actualizado: '+SRCNAME[tab]+' ('+P.filter(p=>p.src===tab).length+' productos)');renderAll();toast('Catálogo actualizado')},1200);
 });
 $('#srcTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-s]');if(b){tab=b.dataset.s;cat='Todas';renderScan()}});
-function clearInbox(){S.captured=[];S.selected=[];S.detail={};S.img={};queue.length=0;renderAll()}
+function clearInbox(){S.captured=[];S.selected=[];S.detail={};S.img={};S.offered={};P.forEach(p=>p.sz={});renderAll()}
 
 /* ---------- estudio ---------- */
 function renderStudio(){
  $('#aiCount').textContent=S.aiToday;$('#aiCost').textContent='USD '+(S.aiToday*0.034).toFixed(2).replace('.',',');
  const ids=S.selected.filter(id=>S.detail[id]);
- if(!ids.length){$('#studioList').innerHTML='<div class="empty">Elegí productos en el Catálogo y aparecen acá solos.</div>';return}
+ if(!ids.length){$('#studioList').innerHTML='<div class="empty">Elegí productos en el Catálogo y marcá los talles que ofrecés: aparecen acá.</div>';return}
  $('#studioList').innerHTML=ids.map(id=>{const p=byId(id),im=S.img[id];
   let res;
   if(im.state==='processing')res='<div class="img" style="display:grid;place-items:center"><div class="spin"></div></div>';
@@ -609,7 +605,7 @@ function quickDemo(){
  tmr.forEach(clearTimeout);tmr=[];
  const keep={brand:S.brand,color:S.color,platform:S.platform};init();Object.assign(S,keep);
  S.captured=P.map(p=>p.id);S.selected=[1,2,4,5,7,8];
- S.selected.forEach(id=>{S.detail[id]=true;const ai=(id===1||id===4);S.img[id]={mode:ai?'ai':'basic',state:'approved',regen:0};if(ai)S.aiToday++;S.auth[id]=true});
+ S.selected.forEach(id=>{S.offered[id]=['S','M','L','XL'];byId(id).sz={S:1,M:1,L:1,XL:1};S.detail[id]=true;const ai=(id===1||id===4);S.img[id]={mode:ai?'ai':'basic',state:'approved',regen:0};if(ai)S.aiToday++;S.auth[id]=true});
  S.priceSeen=true;S.mode='visible';$('#pubMode').value='visible';
  S.published=S.selected.map(id=>({id:id,visible:id!==8}));
  logAdd('Demo completa cargada: 8 capturados, 6 elegidos, 6 publicados (1 en borrador)');
