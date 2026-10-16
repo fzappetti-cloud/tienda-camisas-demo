@@ -149,6 +149,11 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
         <button class="btn sm" id="syncNow" style="border:1px solid var(--line)">↻ Actualizar ahora</button>
       </div>
       <div id="catSel" style="padding:8px 12px;border-bottom:1px solid var(--line)"></div>
+      <div style="padding:8px 12px;border-bottom:1px solid var(--line)">
+        <div class="small"><b>O pegá el enlace de una prenda</b> <span class="mut">que viste en la tienda de la distribuidora: se agrega con su foto, precio y talles.</span></div>
+        <div class="row" style="margin-top:6px;gap:6px"><input id="linkIn" placeholder="https://www.vintagebsas.com.ar/productos/…" style="flex:1;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:12px"><button class="btn pri" onclick="addByLink()">Agregar</button></div>
+        <div id="relBox"></div>
+      </div>
       <div class="cathead">
         <input id="q" placeholder="Buscar prenda…" oninput="shown=24;renderScan()"><span class="small mut" id="cnt"></span>
         <span id="cats"></span>
@@ -318,6 +323,18 @@ async function viewResult(){
  const before=window.CAT_UPDATED||'';await loadCatalog();
  if(PENDING&&window.CAT_UPDATED&&new Date(window.CAT_UPDATED).getTime()>PENDING.t){LASTQ=PENDING.q;PENDING=null;shown=24;cat='Todas';renderAll();toast('Catálogo actualizado con tu búsqueda')}
  else{toast('Todavía no terminó el script 2: esperá un momento y volvé a tocar');renderScan()}}
+const normUrl=u=>String(u||'').trim().replace(/^http:/i,'https:').replace(/^https:\/\/(www\.)?/i,'').split(/[?#]/)[0].replace(/\/$/,'').toLowerCase();
+function addByLink(){
+ const raw=$('#linkIn').value;const key=normUrl(raw);
+ if(!/^(vintagebsas|rumbahelguera)\.com\.ar\/productos\/[^/]+$/.test(key)){toast('Pegá el enlace de un producto de Vintage BSAS o Rumba Helguera');return}
+ const p=P.find(x=>normUrl(x.url)===key);
+ if(!p){toast('Demo: ese producto no está en el catálogo de ejemplo. En el sistema real se lee la página del producto.');return}
+ if(S.captured.includes(p.id))toast('Ya estaba elegido: '+p.name);else{capture(p.id);toast('Agregado: '+p.name)}
+ $('#linkIn').value='';
+ const rel=P.filter(x=>x.src===p.src&&x.id!==p.id&&catOf(x)===catOf(p)&&!S.captured.includes(x.id)&&x.avail).slice(0,4);
+ $('#relBox').innerHTML=rel.length?'<div class="small" style="margin-top:8px"><b>La tienda también muestra estas:</b></div><div class="row" style="gap:8px;margin-top:4px;flex-wrap:wrap">'+rel.map(x=>'<div style="width:96px;font-size:11px"><div class="img" style="height:90px">'+shirt(x,'orig')+'</div><div style="margin-top:3px">'+x.name+'</div><div class="mut">'+fmt(x.cost)+'</div><div class="szrow">'+x.avail.map(z=>'<i>'+z+'</i>').join('')+'</div><button class="btn sm" onclick="capture('+x.id+');addByLinkRefresh()">Elegir</button></div>').join('')+'</div>':'';
+}
+function addByLinkRefresh(){$('#relBox').innerHTML='';renderAll()}
 function doSearch(){const sc=$('#scanning');sc.classList.add('on');
  later(()=>{sc.classList.remove('on');LASTQ={A:SEL.A.slice(),B:SEL.B.slice(),t:TSEL.slice()};shown=24;cat='Todas';renderAll();
   const n=P.filter(inQ).length;logAdd('Búsqueda: '+(LASTQ.A.length+LASTQ.B.length?'tipos elegidos':'todo lo que encuentra')+(LASTQ.t.length?' · talles '+LASTQ.t.join(', '):' · todos los talles')+' → '+n+' productos');toast('Búsqueda lista: '+n+' productos')},1200)}

@@ -57,6 +57,16 @@ function parseProducts(html, baseUrl) {
 // Talles disponibles por producto: cada tarjeta de la tienda trae un atributo data-variants (JSON) con las variantes
 // (color/talle) y si están disponibles. Se asocia al producto por el enlace /productos/ que aparece justo después.
 const SIZE_ORDER = ['XXS','XS','S','M','L','XL','XXL','XXXL','U','UNICO','ÚNICO'];
+function variantSizes(arr) {
+  const set = new Set();
+  for (const v of arr) {
+    if (!v || v.available === false || v.is_visible === false) continue;
+    const opts = [v.option0, v.option1, v.option2].filter(Boolean);
+    if (opts.length) set.add(String(opts[opts.length - 1]).trim().toUpperCase());   // el talle es la última opción (antes va el color)
+  }
+  return [...set].sort((a, b) => (SIZE_ORDER.indexOf(a) + 1 || 99) - (SIZE_ORDER.indexOf(b) + 1 || 99) || a.localeCompare(b));
+}
+const unescapeAttr = t => t.replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#39;/g, "'");
 function parseSizes(html) {
   const map = {};
   const re = /data-variants=(["'])([\s\S]*?)\1/gi;
@@ -69,15 +79,29 @@ function parseSizes(html) {
     const after = html.slice(end, nxt > 0 ? nxt : end + 15000);
     const h = /href=["'](?:https?:\/\/[^/"']+)?(\/productos\/[^"'?#]+)/i.exec(after);
     if (!h) continue;
-    const set = new Set();
-    for (const v of arr) {
-      if (!v || v.available === false || v.is_visible === false) continue;
-      const opts = [v.option0, v.option1, v.option2].filter(Boolean);
-      if (opts.length) set.add(String(opts[opts.length - 1]).trim().toUpperCase());   // el talle es la última opción (antes va el color)
-    }
-    map[h[1]] = [...set].sort((a, b) => (SIZE_ORDER.indexOf(a) + 1 || 99) - (SIZE_ORDER.indexOf(b) + 1 || 99) || a.localeCompare(b));
+    const sizes = variantSizes(arr);
+    map[h[1]] = sizes;
   }
   return map;
+}
+
+// Página de UN producto (el enlace que pega la clienta). Ojo: los datos JSON-LD de estas páginas son de los productos
+// RELACIONADOS, no del principal; el principal se lee del título (og:title), la imagen (og:image) y el bloque #single-product.
+function parseProductPage(html, url) {
+  const meta = p => { const m = new RegExp('<meta[^>]+property=["\']' + p + '["\'][^>]*content=["\']([^"\']*)["\']', 'i').exec(html) || new RegExp('<meta[^>]+content=["\']([^"\']*)["\'][^>]*property=["\']' + p + '["\']', 'i').exec(html); return m ? m[1].replace(/&amp;/g, '&').trim() : ''; };
+  const tag = /<[a-z]+\b[^>]*\bid=["']single-product["'][^>]*>/i.exec(html);
+  const name = cleanName(meta('og:title') || ((/<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(html) || [])[1] || '').replace(/<[^>]+>/g, ''));
+  const image = meta('og:image').replace(/^http:\/\//i, 'https://');   // la tienda la publica con http: se pasa a https
+  const vm = tag && /data-variants=(["'])([\s\S]*?)\1/i.exec(tag[0]);
+  let arr = []; if (vm) { try { arr = JSON.parse(unescapeAttr(vm[2])); } catch {} }
+  if (!name || !image || !Array.isArray(arr) || !arr.length) throw new Error('no se pudo leer el producto (¿es la página de un producto?)');
+  const sz = variantSizes(arr);
+  const prices = arr.filter(v => v && v.available !== false).map(v => Number(v.price_number)).filter(Boolean);
+  const price = prices.length ? Math.min(...prices) : Number(meta('product:price:amount')) || 0;
+  const rest = html.replace(tag[0], tag[0].replace(/data-variants=(["'])[\s\S]*?\1/i, ''));   // sin el bloque principal, para no mezclar talles
+  const path = String(url).replace(/^https?:\/\/[^/]+/i, '').split('?')[0];
+  const related = parseProducts(rest, url).filter(p => String(p.url).replace(/^https?:\/\/[^/]+/i, '').split('?')[0] !== path).slice(0, 8);
+  return { name, price, image, url, sz, available: sz.length > 0, related };
 }
 
 // Categorías de primer nivel que aparecen en el menú de la portada.
@@ -230,8 +254,16 @@ async function runCatalog() {
 async function main() {
   process.on('uncaughtException', e => { console.log(JSON.stringify({ error: String(e.message || e) })); process.exit(1); });
   const mode = process.argv[2];
+  if (mode === 'producto') {   // node scraper/sync.js producto <enlace>: lee un solo producto (1 pedido). Solo enlaces de las tiendas conocidas.
+    const u = new URL(process.argv[3] || '');
+    if (u.protocol !== 'https:' || !Object.values(STORES).some(s => new URL(s.origin).hostname.replace(/^www\./, '') === u.hostname.replace(/^www\./, '')) || !/^\/productos\/[^/]+\/?$/.test(u.pathname)) throw new Error('enlace no válido: tiene que ser la página de un producto de Vintage BSAS o Rumba Helguera');
+    const get = makeFetcher({ requests: 0, deadline: Date.now() + 60000 });
+    const r = await get(u.origin + u.pathname);
+    if (r.status !== 200) throw new Error('producto no disponible');
+    console.log(JSON.stringify(parseProductPage(r.html, u.origin + u.pathname), null, 1)); process.exit(0);
+  }
   if (mode !== 'categorias' && mode !== 'catalogo') { console.log('Uso: node scraper/sync.js categorias | catalogo'); process.exit(2); }
   const ok = mode === 'categorias' ? await runCategories() : await runCatalog();
   process.exit(ok ? 0 : 1);
 }
-if (require.main === module) main(); else module.exports = { applySizes, parseSizes, parseProducts, discoverCategories, crawlStore, validateSelection, LIMITS };
+if (require.main === module) main(); else module.exports = { parseProductPage, applySizes, parseSizes, parseProducts, discoverCategories, crawlStore, validateSelection, LIMITS };

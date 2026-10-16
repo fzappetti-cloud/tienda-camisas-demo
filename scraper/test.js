@@ -1,4 +1,4 @@
-const { applySizes, validateSelection, parseSizes, parseProducts, discoverCategories, crawlStore, LIMITS } = require('./sync.js');
+const { parseProductPage, applySizes, validateSelection, parseSizes, parseProducts, discoverCategories, crawlStore, LIMITS } = require('./sync.js');
 LIMITS.pauseMs = 0;
 const assert = (c, m) => { if (!c) { console.log('FALLÓ:', m); process.exit(1); } };
 const ld = (items) => '<html>' + items.map(i => `<script type="application/ld+json">${JSON.stringify({ '@type': 'Product', name: i.n, image: ['https://x/' + i.n + '.webp'], offers: { price: String(i.p) }, url: 'https://t/p/' + i.n })}</script>`).join('') + '</html>';
@@ -27,6 +27,17 @@ assert(ap.products[0].sz.join() === 'M', 'solo deja los talles elegidos');
 assert(applySizes([{ name: 'z', sz: ['S'] }], []).products.length === 1, 'sin talles elegidos no filtra');
 assert(validateSelection('{"categories":{"A":["/a/"]},"talles":["S","M"]}').talles.join() === 'S,M', 'talles en selección');
 let eT = false; try { validateSelection('{"talles":["ZZ"]}'); } catch { eT = true; } assert(eT, 'rechaza talles raros');
+// 1e) página de un producto: el principal sale de og:title/og:image/#single-product; el JSON-LD es de relacionados
+const mainV = vv([{ option0: 'Blanco', option1: 'M', available: true, price_number: 22490 }, { option0: 'Blanco', option1: 'L', available: true, price_number: 22490 }, { option0: 'Blanco', option1: 'S', available: false, price_number: 22490 }]);
+const relCard = `<div data-variants="${vv([{ option0: 'S', available: true }])}"><a href="/productos/otra-1/">x</a></div>`;
+const pageHtml = `<html><head><meta property="og:title" content="Camisa NINAF - 70212"><meta property="og:image" content="http://x/ninaf.webp"></head><body>
+<div class="js-product-detail" id="single-product" data-variants="${mainV}"><a href="/productos/otra-1/">breadcrumb</a></div>${relCard}
+<script type="application/ld+json">${JSON.stringify({ '@type': 'Product', name: 'Top RELACIONADO - 3020', image: 'https://x/r.webp', offers: { price: '31240' }, url: 'https://t/productos/otra-1/' })}</script></body></html>`;
+const pp = parseProductPage(pageHtml, 'https://t/productos/ninaf/');
+assert(pp.name === 'Camisa NINAF' && pp.price === 22490 && pp.sz.join() === 'M,L', 'producto principal: ' + JSON.stringify(pp));
+assert(pp.image === 'https://x/ninaf.webp', 'imagen en https');
+assert(pp.related.length === 1 && pp.related[0].name === 'Top RELACIONADO' && pp.related[0].sz.join() === 'S', 'relacionados separados: ' + JSON.stringify(pp.related));
+let eP = false; try { parseProductPage('<html>no es un producto</html>', 'https://t/productos/x/'); } catch { eP = true; } assert(eP, 'rechaza páginas que no son de producto');
 // 2) descubrimiento de categorías
 const nav = '<a href="/productos/">Ver colección</a><a href="/camisas/">CAMISAS</a><a href="/todo/">Productos</a><a href="https://www.t.com/remeras/">REMERAS Y TOPS</a><a href="/remeras/tops/">Tops</a><a href="/descuentos/">Descuentos</a><a href="/contacto/">Contacto</a><a href="/kids/">Kids</a><a href="/productos/x/">Prod</a><a href="/camisas/">CAMISAS</a>';
 const cats = discoverCategories(nav);
