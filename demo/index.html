@@ -300,7 +300,7 @@ async function loadCatalog(){
   try{if(!localStorage.getItem('catSel')){const rg=await fetch('../data/config.json?'+Date.now());if(rg.ok){const g=await rg.json();if(Array.isArray(g.talles)&&!localStorage.getItem('szSel'))TSEL=g.talles.slice();for(const k of ['A','B']){const ps=(g.categories&&g.categories[k])||[];SEL[k]=(CATS[k]||[]).filter(c=>ps.includes(c.path)).map(c=>c.name)}}}}catch(e){}
   renderAll()}catch(e){}
 }
-const CATS={A:null,B:null};let SEL={A:[],B:[]};let TSEL=[];let LASTQ=null;const ALLSZ=['XS','S','M','L','XL','XXL'];
+const CATS={A:null,B:null};let SEL={A:[],B:[]};let TSEL=[];let LASTQ=null,PENDING=null;const WF_URL='https://github.com/fzappetti-cloud/tienda-camisas-demo/actions/workflows/sync-catalog.yml';const ALLSZ=['XS','S','M','L','XL','XXL'];
 const tok=z=>String(z).toUpperCase().match(/XXXL|XXL|XXS|XL|XS|S|M|L|U/g)||[];
 const szOk=z=>!TSEL.length||tok(z).some(t=>TSEL.includes(t));
 const prodOk=p=>!TSEL.length||!p.avail||p.avail.some(szOk);
@@ -309,6 +309,15 @@ try{const t=JSON.parse(localStorage.getItem('szSel')||'null');if(Array.isArray(t
 function saveSel(){try{localStorage.setItem('catSel',JSON.stringify(SEL));localStorage.setItem('szSel',JSON.stringify(TSEL))}catch(e){}}
 function toggleTSel(z){const i=TSEL.indexOf(z);if(i>=0)TSEL.splice(i,1);else TSEL.push(z);saveSel();shown=24;renderScan()}
 function catList(k){return CATS[k]?CATS[k].map(c=>c.name):[...new Set(P.filter(p=>p.src===k).map(p=>p.cat||'Otras'))]}
+function realSearch(){
+ const o={categories:{A:[],B:[]},talles:TSEL.slice()};for(const k of ['A','B'])o.categories[k]=(CATS[k]||[]).filter(c=>SEL[k].includes(c.name)).map(c=>c.path);
+ const t=JSON.stringify(o);PENDING={t:Date.now(),q:{A:SEL.A.slice(),B:SEL.B.slice(),t:TSEL.slice()},cfg:t};
+ try{navigator.clipboard.writeText(t)}catch(e){}
+ window.open(WF_URL,'_blank','noopener');logAdd('Búsqueda enviada al script 2 (pendiente de resultado)');renderScan()}
+async function viewResult(){
+ const before=window.CAT_UPDATED||'';await loadCatalog();
+ if(PENDING&&window.CAT_UPDATED&&new Date(window.CAT_UPDATED).getTime()>PENDING.t){LASTQ=PENDING.q;PENDING=null;shown=24;cat='Todas';renderAll();toast('Catálogo actualizado con tu búsqueda')}
+ else{toast('Todavía no terminó el script 2: esperá un momento y volvé a tocar');renderScan()}}
 function doSearch(){const sc=$('#scanning');sc.classList.add('on');
  later(()=>{sc.classList.remove('on');LASTQ={A:SEL.A.slice(),B:SEL.B.slice(),t:TSEL.slice()};shown=24;cat='Todas';renderAll();
   const n=P.filter(inQ).length;logAdd('Búsqueda: '+(LASTQ.A.length+LASTQ.B.length?'tipos elegidos':'todo lo que encuentra')+(LASTQ.t.length?' · talles '+LASTQ.t.join(', '):' · todos los talles')+' → '+n+' productos');toast('Búsqueda lista: '+n+' productos')},1200)}
@@ -403,9 +412,10 @@ function renderScan(){
  $$('#srcTabs button[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===tab));
  const real=$('#realLink');real.href=SRCURL[tab];
  const all=catList(tab);
- $('#catSel').innerHTML='<div class="small"><b>Tipos de prenda que encontró el sistema.</b> <span class="mut">Tildá lo que querés y tocá Buscar: trae solo eso. Si no tildás nada, trae todo lo que encuentra.</span> <button class="btn sm" onclick="allCatSel(\''+tab+'\',true)">Todos</button> <button class="btn sm" onclick="allCatSel(\''+tab+'\',false)">Ninguno</button> <button class="btn pri" onclick="doSearch()">🔎 Buscar</button> <button class="btn sm" onclick="copyCfg()" title="Solo para la carga real desde GitHub (demo)">Copiar selección</button></div><div style="margin-top:6px"><span class="small"><b>Talles que ofrezco:</b></span> '+ALLSZ.map(z=>'<span class="chip '+(TSEL.includes(z)?'on':'')+'" onclick="toggleTSel(\''+z+'\')">'+z+'</span>').join('')+' <span class="small mut">'+(TSEL.length?'Trae solo productos con alguno de esos talles disponibles.':'Sin marcar: trae todos los talles disponibles.')+'</span></div><div style="margin-top:6px">'+all.map(c=>'<label style="display:inline-block;margin:0 10px 4px 0;font-size:12px;cursor:pointer"><input type="checkbox" '+(SEL[tab].includes(c)?'checked':'')+' onchange="toggleCatSel(\''+tab+'\',this.dataset.c)" data-c="'+c.replace(/"/g,'&quot;')+'"> '+c+'</label>').join('')+'</div>';
+ $('#catSel').innerHTML='<div class="small"><b>Tipos de prenda que encontró el sistema.</b> <span class="mut">Tildá lo que querés y tocá Buscar: trae solo eso. Si no tildás nada, trae todo lo que encuentra.</span> <button class="btn sm" onclick="allCatSel(\''+tab+'\',true)">Todos</button> <button class="btn sm" onclick="allCatSel(\''+tab+'\',false)">Ninguno</button> <button class="btn pri" onclick="realSearch()" title="Copia tu selección y abre GitHub para ejecutar el script 2">🔎 Buscar</button> <button class="btn sm" onclick="doSearch()" title="Muestra el resultado con el catálogo ya guardado, sin ejecutar nada">Vista previa (sin GitHub)</button></div><div style="margin-top:6px"><span class="small"><b>Talles que ofrezco:</b></span> '+ALLSZ.map(z=>'<span class="chip '+(TSEL.includes(z)?'on':'')+'" onclick="toggleTSel(\''+z+'\')">'+z+'</span>').join('')+' <span class="small mut">'+(TSEL.length?'Trae solo productos con alguno de esos talles disponibles.':'Sin marcar: trae todos los talles disponibles.')+'</span></div><div style="margin-top:6px">'+all.map(c=>'<label style="display:inline-block;margin:0 10px 4px 0;font-size:12px;cursor:pointer"><input type="checkbox" '+(SEL[tab].includes(c)?'checked':'')+' onchange="toggleCatSel(\''+tab+'\',this.dataset.c)" data-c="'+c.replace(/"/g,'&quot;')+'"> '+c+'</label>').join('')+'</div>';
  const list=P.filter(p=>p.src===tab&&inQ(p));
- if(qChanged())$('#catSel').innerHTML+='<div class="small" style="margin-top:6px;color:#8a5a00">Cambiaste la selección: tocá Buscar para actualizar el catálogo.</div>';
+ if(PENDING)$('#catSel').innerHTML+='<div class="small" style="margin-top:6px;padding:6px 8px;background:#fff7e0;border-radius:8px"><b>Búsqueda en curso.</b> Tu selección ya está copiada. En GitHub: pegala en el campo <i>seleccion</i> y tocá <i>Run workflow</i>. Cuando termine (2 a 3 min) tocá <button class="btn sm pri" onclick="viewResult()">↻ Ver resultado</button></div>';
+ else if(qChanged())$('#catSel').innerHTML+='<div class="small" style="margin-top:6px;color:#8a5a00">Cambiaste la selección: tocá Buscar para actualizar el catálogo.</div>';
  const cats=['Todas',...new Set(list.map(catOf))];if(!cats.includes(cat))cat='Todas';
  $('#cats').innerHTML=cats.map(c=>'<button class="cat '+(c===cat?'on':'')+'" data-c="'+c.replace(/"/g,'&quot;')+'">'+c+'</button>').join('');
  const q=($('#q').value||'').toLowerCase();
