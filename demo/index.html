@@ -297,7 +297,7 @@ const byId=id=>P.find(p=>p.id===id);
 let S, tab='A', tmr=[];
 const IDS={A:[1,2,3,4,9,10,11,12],B:[5,6,7,8,13,14,15,16]};
 async function loadCatalog(){
- try{const r=await fetch('../data/catalog.json?'+Date.now());if(!r.ok)return;const c=await r.json();const np=[];let extra={A:100,B:300};
+ try{const r=await fetch('../data/catalog.json?'+Date.now());if(!r.ok)return;const c=await r.json();const np=[];let extra={A:100,B:10000};
   for(const k of ['A','B']){const st=c.stores&&c.stores[k];if(!st)continue;st.products.forEach((x,i)=>{const id=i<8?IDS[k][i]:(++extra[k]);np.push({id:id,name:x.name,src:k,cost:x.price,img:x.image,url:x.url,cat:x.cat||'',avail:x.sz||null,sz:{}})})}
   if(np.length>=8){const keep={};P.forEach(p=>{if(p.sz&&Object.keys(p.sz).length)keep[p.id]=p.sz});P.length=0;np.forEach(p=>{if(keep[p.id])p.sz=keep[p.id];P.push(p)});if(c.updated){window.CAT_UPDATED=c.updated}}
   const t=$('#syncTag');if(t&&window.CAT_UPDATED)t.textContent='Catálogo del '+new Date(window.CAT_UPDATED).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
@@ -673,7 +673,7 @@ function quickDemo(){
  logAdd('Demo completa cargada: 16 capturados, 6 elegidos, 6 publicados (1 en borrador)');
  show('dash');toast('Demo cargada. Probá la vista de tienda y los pedidos.');
 }
-function resetAll(){tmr.forEach(clearTimeout);tmr=[];const keep={brand:S.brand,color:S.color,platform:S.platform};init();Object.assign(S,keep);$('#plog').innerHTML='';$('#pprog').style.width='0';$('#dprog').style.width='0';closeCart();closeM();show('dash')}
+function resetAll(){tmr.forEach(clearTimeout);tmr=[];const keep={brand:S.brand,color:S.color,platform:S.platform};init();Object.assign(S,keep);$('#plog').innerHTML='';$('#pprog').style.width='0';LASTQ=null;PENDING=null;SEL={A:[],B:[]};TSEL=[];saveSel();cat='Todas';shown=24;const lk=$('#linkIn');if(lk)lk.value='';const rb=$('#relBox');if(rb)rb.innerHTML='';closeCart();closeM();renderAll();show('dash');toast('Demo reiniciada')}
 
 init();renderAll();loadCatalog();
 </script>
