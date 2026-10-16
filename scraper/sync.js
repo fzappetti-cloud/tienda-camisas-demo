@@ -197,24 +197,25 @@ async function runCategories() {
   return Object.values(status).every(s => s.ok);
 }
 
-// PASO 2 · "catalogo": trae SOLO las categorías tildadas (data/config.json). Sin selección no carga nada.
+// PASO 2 · "catalogo": trae SOLO las categorías tildadas (data/config.json); si no hay ninguna tildada, trae todo lo que encuentra.
 async function runCatalog() {
   if (process.env.SELECCION && process.env.SELECCION.trim()) fs.writeFileSync(CONFIG, JSON.stringify(validateSelection(process.env.SELECCION), null, 2));
   const cfg = readJson(CONFIG, null);
   const sel = (cfg && cfg.categories) || {};
   const wanted = (cfg && cfg.talles) || [];
-  if (!Object.values(sel).some(a => Array.isArray(a) && a.length)) { console.log(JSON.stringify({ paso: 'catalogo', error: 'No hay tipos de prenda seleccionados: tildalos en el tablero y pegá la selección. No se cargó nada.' })); return false; }
+  // Sin ningún tipo tildado = trae todo lo que encuentra (con los talles disponibles). Con alguno tildado = solo esos.
+  const anySel = Object.values(sel).some(a => Array.isArray(a) && a.length);
   const prev = readJson(OUT, {});
   const next = { updated: new Date().toISOString(), stores: {} };
   const status = { run: next.updated, stores: {} };
   for (const key of Object.keys(STORES)) {
-    const picked = Array.isArray(sel[key]) ? sel[key] : [];
-    if (!picked.length) { status.stores[key] = { ok: true, count: 0, requests: 0, selected: 0 }; continue; }   // tienda sin selección: no se consulta
+    const picked = anySel ? (Array.isArray(sel[key]) ? sel[key] : []) : null;      // null = todas las categorías
+    if (anySel && !picked.length) { status.stores[key] = { ok: true, count: 0, requests: 0, selected: 0 }; continue; }   // tienda sin selección: no se consulta
     try {
       const st = await crawlStore(key, null, null, picked);
       const f = applySizes(st.products, wanted);
       next.stores[key] = { name: st.name, url: st.url, products: f.products };
-      status.stores[key] = { ok: true, count: f.products.length, sinTalleElegido: f.dropped, talles: wanted, requests: st.requests, categories: st.categories, errors: st.errors, selected: picked.length };
+      status.stores[key] = { ok: true, count: f.products.length, sinTalleElegido: f.dropped, talles: wanted, requests: st.requests, categories: st.categories, errors: st.errors, selected: picked ? picked.length : 'todas' };
     } catch (e) {
       status.stores[key] = { ok: false, error: String(e.message || e) };
       if (prev.stores && prev.stores[key]) next.stores[key] = prev.stores[key];     // si falla, conserva la copia anterior de esa tienda

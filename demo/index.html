@@ -300,7 +300,7 @@ async function loadCatalog(){
   try{if(!localStorage.getItem('catSel')){const rg=await fetch('../data/config.json?'+Date.now());if(rg.ok){const g=await rg.json();if(Array.isArray(g.talles)&&!localStorage.getItem('szSel'))TSEL=g.talles.slice();for(const k of ['A','B']){const ps=(g.categories&&g.categories[k])||[];SEL[k]=(CATS[k]||[]).filter(c=>ps.includes(c.path)).map(c=>c.name)}}}}catch(e){}
   renderAll()}catch(e){}
 }
-const CATS={A:null,B:null};let SEL={A:[],B:[]};let TSEL=[];const ALLSZ=['XS','S','M','L','XL','XXL'];
+const CATS={A:null,B:null};let SEL={A:[],B:[]};let TSEL=[];let LASTQ=null;const ALLSZ=['XS','S','M','L','XL','XXL'];
 const tok=z=>String(z).toUpperCase().match(/XXXL|XXL|XXS|XL|XS|S|M|L|U/g)||[];
 const szOk=z=>!TSEL.length||tok(z).some(t=>TSEL.includes(t));
 const prodOk=p=>!TSEL.length||!p.avail||p.avail.some(szOk);
@@ -309,6 +309,12 @@ try{const t=JSON.parse(localStorage.getItem('szSel')||'null');if(Array.isArray(t
 function saveSel(){try{localStorage.setItem('catSel',JSON.stringify(SEL));localStorage.setItem('szSel',JSON.stringify(TSEL))}catch(e){}}
 function toggleTSel(z){const i=TSEL.indexOf(z);if(i>=0)TSEL.splice(i,1);else TSEL.push(z);saveSel();shown=24;renderScan()}
 function catList(k){return CATS[k]?CATS[k].map(c=>c.name):[...new Set(P.filter(p=>p.src===k).map(p=>p.cat||'Otras'))]}
+function doSearch(){const sc=$('#scanning');sc.classList.add('on');
+ later(()=>{sc.classList.remove('on');LASTQ={A:SEL.A.slice(),B:SEL.B.slice(),t:TSEL.slice()};shown=24;cat='Todas';renderAll();
+  const n=P.filter(inQ).length;logAdd('Búsqueda: '+(LASTQ.A.length+LASTQ.B.length?'tipos elegidos':'todo lo que encuentra')+(LASTQ.t.length?' · talles '+LASTQ.t.join(', '):' · todos los talles')+' → '+n+' productos');toast('Búsqueda lista: '+n+' productos')},1200)}
+function inQ(p){if(!LASTQ)return false;const any=LASTQ.A.length+LASTQ.B.length>0;if(any&&!LASTQ[p.src].includes(catOf(p)))return false;
+ return !LASTQ.t.length||!p.avail||p.avail.some(z=>tok(z).some(t=>LASTQ.t.includes(t)))}
+function qChanged(){return LASTQ&&(JSON.stringify([LASTQ.A,LASTQ.B,LASTQ.t])!==JSON.stringify([SEL.A,SEL.B,TSEL]))}
 function toggleCatSel(k,name){const a=SEL[k],i=a.indexOf(name);if(i>=0)a.splice(i,1);else a.push(name);saveSel();shown=24;cat='Todas';renderScan()}
 function allCatSel(k,on){SEL[k]=on?catList(k):[];saveSel();shown=24;cat='Todas';renderScan()}
 function copyCfg(){const o={categories:{A:[],B:[]},talles:TSEL.slice()};for(const k of ['A','B'])o.categories[k]=(CATS[k]||[]).filter(c=>SEL[k].includes(c.name)).map(c=>c.path);const t=JSON.stringify(o,null,2);try{navigator.clipboard.writeText(t);toast('Selección copiada')}catch(e){prompt('Copiá esto',t)}}
@@ -397,10 +403,9 @@ function renderScan(){
  $$('#srcTabs button[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===tab));
  const real=$('#realLink');real.href=SRCURL[tab];
  const all=catList(tab);
- $('#catSel').innerHTML='<div class="small"><b>Paso 1 · Tipos de prenda que tiene la tienda.</b> <span class="mut">Tildá los que querés vender: el Paso 2 trae el catálogo solo de esos, no todo junto.</span> <button class="btn sm" onclick="allCatSel(\''+tab+'\',true)">Todos</button> <button class="btn sm" onclick="allCatSel(\''+tab+'\',false)">Ninguno</button> <button class="btn sm pri" onclick="copyCfg()" title="Copia la selección para el Paso 2 (Cargar catálogo)">Copiar selección (tipos + talles) para cargar</button></div><div style="margin-top:6px"><span class="small"><b>Talles que ofrezco:</b></span> '+ALLSZ.map(z=>'<span class="chip '+(TSEL.includes(z)?'on':'')+'" onclick="toggleTSel(\''+z+'\')">'+z+'</span>').join('')+' <span class="small mut">'+(TSEL.length?'Solo se muestran y cargan productos con alguno de esos talles disponibles.':'Sin marcar: se muestran todos los talles.')+'</span></div><div style="margin-top:6px">'+all.map(c=>'<label style="display:inline-block;margin:0 10px 4px 0;font-size:12px;cursor:pointer"><input type="checkbox" '+(SEL[tab].includes(c)?'checked':'')+' onchange="toggleCatSel(\''+tab+'\',this.dataset.c)" data-c="'+c.replace(/"/g,'&quot;')+'"> '+c+'</label>').join('')+'</div>';
- const list=P.filter(p=>p.src===tab&&SEL[tab].includes(catOf(p))&&prodOk(p));
- const pend=SEL[tab].filter(c=>!P.some(p=>p.src===tab&&catOf(p)===c));
- if(pend.length)$('#catSel').innerHTML+='<div class="small" style="margin-top:6px;color:#8a5a00">Falta cargar: '+pend.join(', ')+'. Copiá la selección y corré el Paso 2 (Cargar catálogo).</div>';
+ $('#catSel').innerHTML='<div class="small"><b>Tipos de prenda que encontró el sistema.</b> <span class="mut">Tildá lo que querés y tocá Buscar: trae solo eso. Si no tildás nada, trae todo lo que encuentra.</span> <button class="btn sm" onclick="allCatSel(\''+tab+'\',true)">Todos</button> <button class="btn sm" onclick="allCatSel(\''+tab+'\',false)">Ninguno</button> <button class="btn pri" onclick="doSearch()">🔎 Buscar</button> <button class="btn sm" onclick="copyCfg()" title="Solo para la carga real desde GitHub (demo)">Copiar selección</button></div><div style="margin-top:6px"><span class="small"><b>Talles que ofrezco:</b></span> '+ALLSZ.map(z=>'<span class="chip '+(TSEL.includes(z)?'on':'')+'" onclick="toggleTSel(\''+z+'\')">'+z+'</span>').join('')+' <span class="small mut">'+(TSEL.length?'Trae solo productos con alguno de esos talles disponibles.':'Sin marcar: trae todos los talles disponibles.')+'</span></div><div style="margin-top:6px">'+all.map(c=>'<label style="display:inline-block;margin:0 10px 4px 0;font-size:12px;cursor:pointer"><input type="checkbox" '+(SEL[tab].includes(c)?'checked':'')+' onchange="toggleCatSel(\''+tab+'\',this.dataset.c)" data-c="'+c.replace(/"/g,'&quot;')+'"> '+c+'</label>').join('')+'</div>';
+ const list=P.filter(p=>p.src===tab&&inQ(p));
+ if(qChanged())$('#catSel').innerHTML+='<div class="small" style="margin-top:6px;color:#8a5a00">Cambiaste la selección: tocá Buscar para actualizar el catálogo.</div>';
  const cats=['Todas',...new Set(list.map(catOf))];if(!cats.includes(cat))cat='Todas';
  $('#cats').innerHTML=cats.map(c=>'<button class="cat '+(c===cat?'on':'')+'" data-c="'+c.replace(/"/g,'&quot;')+'">'+c+'</button>').join('');
  const q=($('#q').value||'').toLowerCase();
@@ -417,7 +422,7 @@ function renderScan(){
    '<button class="btn '+(inb?'':'pri')+'" '+(inb?'disabled':'')+' onclick="capture('+p.id+')">'+(inb?'✓ Elegido':'Elegir para mi tienda')+'</button>';
   $('#pcards').appendChild(d);
  });
- if(!list.length){const e=document.createElement('div');e.className='empty';e.style.gridColumn='1/-1';e.textContent='Tildá arriba al menos un tipo de prenda para ver sus productos.';$('#pcards').appendChild(e)}
+ if(!list.length){const e=document.createElement('div');e.className='empty';e.style.gridColumn='1/-1';e.textContent=LASTQ?'La búsqueda no encontró productos con esa selección.':'Todavía no buscaste. Tildá tipos de prenda y talles (o nada, para traer todo) y tocá Buscar.';$('#pcards').appendChild(e)}
  const more=$('#moreBtn');more.style.display=filtered.length>shown?'block':'none';more.textContent='Ver más ('+(filtered.length-shown)+' restantes)';
  const ib=$('#inbox');
  if(!S.captured.length){ib.innerHTML='<div class="empty">Todavía no elegiste productos. Tocá "Elegir para mi tienda" en los que te gusten.</div>';return}
@@ -635,7 +640,7 @@ function quickDemo(){
  const keep={brand:S.brand,color:S.color,platform:S.platform};init();Object.assign(S,keep);
  S.captured=P.filter(p=>p.id<=16).map(p=>p.id);S.selected=[1,2,4,5,7,8];
  S.selected.forEach(id=>{S.offered[id]=['S','M','L','XL'];byId(id).sz={S:1,M:1,L:1,XL:1};S.detail[id]=true;const ai=(id===1||id===4);S.img[id]={mode:ai?'ai':'basic',state:'approved',regen:0};if(ai)S.aiToday++;S.auth[id]=true});
- SEL.A=catList('A');SEL.B=catList('B');saveSel();
+ SEL.A=[];SEL.B=[];TSEL=[];saveSel();LASTQ={A:[],B:[],t:[]};
  S.priceSeen=true;S.mode='visible';$('#pubMode').value='visible';
  S.published=S.selected.map(id=>({id:id,visible:id!==8}));
  logAdd('Demo completa cargada: 16 capturados, 6 elegidos, 6 publicados (1 en borrador)');
