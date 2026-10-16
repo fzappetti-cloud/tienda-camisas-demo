@@ -184,6 +184,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
     <span class="sp"></span><span class="small mut">Máx. 2 regeneraciones por foto · tope diario configurable</span>
   </div>
   <div id="studioList" class="grid"></div>
+  <div id="studioNext" class="card" style="margin-top:12px"></div>
 </section>
 
 <!-- PRECIOS -->
@@ -500,6 +501,8 @@ function clearInbox(){S.captured=[];S.selected=[];S.detail={};S.img={};S.offered
 
 /* ---------- estudio ---------- */
 function renderStudio(){
+ {const ids0=S.selected.filter(id=>S.detail[id]),ap=ids0.filter(id=>S.img[id]&&S.img[id].state==='approved').length,pr=ids0.filter(id=>S.img[id]&&S.img[id].state==='processing').length;
+  $('#studioNext').innerHTML=ids0.length?'<div class="row"><span><b>'+ap+' de '+ids0.length+' fotos aprobadas</b><div class="small mut">'+(pr?'Esperá: hay fotos procesándose.':ap?'Podés seguir. Las fotos sin aprobar quedan afuera de la publicación.':'Procesá y aprobá al menos una foto para seguir.')+'</div></span><span class="sp"></span><button class="btn pri" '+(ap&&!pr?'':'disabled')+' onclick="S.priceSeen=true;show(\'price\')">Siguiente: Precios y marca →</button></div>':'';}
  $('#aiCount').textContent=S.aiToday;$('#aiCost').textContent='USD '+(S.aiToday*0.034).toFixed(2).replace('.',',');
  const ids=S.selected.filter(id=>S.detail[id]);
  if(!ids.length){$('#studioList').innerHTML='<div class="empty">Elegí productos en el Catálogo y marcá los talles que ofrecés: aparecen acá.</div>';return}
