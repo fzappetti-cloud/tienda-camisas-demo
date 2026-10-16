@@ -36,7 +36,7 @@ main{padding:20px;max-width:1150px;width:100%}
 .badge.ok{background:#dcf3e6;color:var(--ok)} .badge.warn{background:#fdebd0;color:var(--warn)} .badge.err{background:#fde2de;color:var(--err)}
 .steps{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
 .step{flex:1;min-width:120px;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:12px}
-.step b{display:block;font-size:13px} .step.done{border-color:var(--ok);background:#effaf3} .step.act{border-color:var(--brand);box-shadow:0 0 0 2px rgba(138,75,60,.15)}
+.step{cursor:pointer}.step:hover{border-color:var(--brand)}.step small{display:block;color:var(--mut);margin-top:4px;font-size:11px;line-height:1.3}.kpi{cursor:pointer}.kpi:hover{border-color:var(--brand)}.step b{display:block;font-size:13px} .step.done{border-color:var(--ok);background:#effaf3} .step.act{border-color:var(--brand);box-shadow:0 0 0 2px rgba(138,75,60,.15)}
 .log{max-height:190px;overflow:auto;font:12px/1.5 ui-monospace,Consolas,monospace;background:#16181d;color:#cdd3de;border-radius:10px;padding:10px}
 table{width:100%;border-collapse:collapse} th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:middle} th{font-size:12px;color:var(--mut);font-weight:600}
 .frame{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
@@ -120,7 +120,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
 <!-- TABLERO -->
 <section class="view on" id="v-dash">
   <h1>Tablero de operaciones</h1>
-  <p class="mut">Del producto que te gusta a la tienda publicada, en un solo lugar.</p>
+  <p class="mut">Es el resumen de todo: cuánto llevás hecho y qué sigue. Tocá un paso o un número para ir a esa sección, o usá el botón "Ir al siguiente paso".</p>
   <div class="grid g5" id="kpis"></div>
   <div class="steps" id="steps"></div>
   <div class="grid g2">
@@ -406,11 +406,11 @@ function renderAll(){
 /* ---------- tablero ---------- */
 function renderDash(){
  const rd=ready().length, pend=S.orders.filter(o=>o.status!=='comprado').length;
- $('#kpis').innerHTML=[['Capturados',S.captured.length],['Elegidos',S.selected.length],['Listos para publicar',rd],['Publicados',S.published.length],['Pedidos por comprar',pend]]
-  .map(a=>'<div class="card kpi"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>').join('');
- const st=[['1 · Escanear',S.captured.length>0],['2 · Elegir y validar talles',S.selected.length>0&&S.selected.every(i=>S.detail[i])],['3 · Fotos',rd>0],['4 · Precios',S.priceSeen&&rd>0],['5 · Publicar',S.published.length>0],['6 · Vender y comprar',S.orders.some(o=>o.status==='comprado')]];
+ const kp=[['Capturados',S.captured.length,'scan'],['Elegidos',S.selected.length,'scan'],['Listos para publicar',rd,'studio'],['Publicados',S.published.length,'pub'],['Pedidos por comprar',pend,'orders']];
+ $('#kpis').innerHTML=kp.map(a=>'<div class="card kpi" onclick="show(\''+a[2]+'\')" title="Ir a esta sección"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>').join('');
+ const st=[['1 · Buscar y elegir',S.captured.length>0,'scan','Buscás en las distribuidoras y elegís las prendas.'],['2 · Confirmar talles',S.selected.length>0&&S.selected.every(i=>S.detail[i]),'scan','Revisás qué talles vas a ofrecer de cada prenda.'],['3 · Fotos',rd>0,'studio','Se adaptan las fotos para tu marca.'],['4 · Precios',S.priceSeen&&rd>0,'price','Definís tu margen y el precio de venta.'],['5 · Publicar',S.published.length>0,'pub','Se cargan las prendas en tu tienda.'],['6 · Vender y comprar',S.orders.some(o=>o.status==='comprado'),'orders','Llegan los pedidos y se compran a la distribuidora.']];
  let act=st.findIndex(s=>!s[1]);
- $('#steps').innerHTML=st.map((s,i)=>'<div class="step '+(s[1]?'done':i===act?'act':'')+'"><b>'+s[0]+'</b>'+(s[1]?'Listo ✓':i===act?'Siguiente paso':'Pendiente')+'</div>').join('');
+ $('#steps').innerHTML=st.map((s,i)=>'<div class="step '+(s[1]?'done':i===act?'act':'')+'" onclick="show(\''+s[2]+'\')"><b>'+s[0]+'</b>'+(s[1]?'Listo ✓':i===act?'Siguiente paso':'Pendiente')+'<small>'+s[3]+'</small></div>').join('')+(act>=0?'<div style="flex-basis:100%"><button class="btn pri" onclick="show(\''+st[act][2]+'\')">Ir al siguiente paso: '+st[act][0].replace(/^\d · /,'')+' →</button></div>':'<div style="flex-basis:100%"><b>¡Todos los pasos completos!</b></div>');
  const usd=S.aiToday*0.034;
  $('#costs').innerHTML='<table><tr><td>'+platName()+' '+(S.platform==='tn'?'(plan Esencial)':'(hosting aparte)')+'</td><td>'+(S.platform==='tn'?'$ 27.999 /mes':'según hosting')+'</td></tr>'+
   '<tr><td>Railway (plan Hobby)</td><td>USD 5 /mes</td></tr><tr><td>GitHub</td><td>Gratis</td></tr>'+
