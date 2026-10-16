@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Tablero de operaciones – Demo</title>
 <style>
-:root{--brand:#8a4b3c;--ink:#1f2328;--mut:#6b7280;--bg:#f6f5f2;--card:#fff;--line:#e5e2dc;--ok:#1a7f4b;--warn:#b45309;--err:#b42318;--r:12px}
+:root{--brand:#7a1c2a;--ink:#1f2328;--mut:#6b7280;--bg:#f6f5f2;--card:#fff;--line:#e5e2dc;--ok:#1a7f4b;--warn:#b45309;--err:#b42318;--r:12px}
 *{box-sizing:border-box}
 body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
 button,input,select{font:inherit}
 h1{font-size:22px;margin:0 0 4px} h2{font-size:16px;margin:0 0 10px} p{margin:0 0 8px}
 .mut{color:var(--mut)} .small{font-size:12px}
 .top{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;flex-wrap:wrap}
-.logo{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700}
+.logo img{width:100%;height:100%;object-fit:cover;border-radius:8px;display:block}.logo.full{width:auto;height:34px;background:none;border-radius:0}.logo.full img{width:auto;height:100%;border-radius:4px}.logo{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700}
 .top .name{font-weight:700;font-size:16px}
 .pill{font-size:11px;padding:3px 8px;border-radius:99px;background:#fff3cd;color:#7a5b00;border:1px solid #f1dc8b}
 .sp{flex:1}
@@ -90,8 +90,8 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
 <body>
 
 <header class="top">
-  <div class="logo" id="logo">T</div>
-  <span class="name" id="brandName">Tu Marca</span>
+  <div class="logo" id="logo"><img src="isotipo-as.jpg" alt="AS"></div>
+  <span class="name" id="brandName">ADRIANA-SHOP</span>
   <span class="pill">DEMO · datos simulados</span>
   <span class="sp"></span>
   <label class="small mut">Plataforma de tienda
@@ -195,8 +195,9 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
     <div class="card">
       <h2>Tu marca</h2>
       <div class="row">
-        <div><label class="l">Nombre de la tienda</label><input type="text" id="inName" value="Tu Marca"></div>
-        <div><label class="l">Color</label><input type="color" id="inColor" value="#8a4b3c"></div>
+        <div><label class="l">Nombre de la tienda</label><input type="text" id="inName" value="ADRIANA-SHOP"></div>
+        <div><label class="l">Color</label><input type="color" id="inColor" value="#7a1c2a"></div>
+        <div><label class="l">Logo</label><img src="logo-adriana-shop.jpg" alt="logo" style="height:56px;border-radius:6px;border:1px solid var(--line);display:block"></div>
       </div>
     </div>
     <div class="card">
@@ -243,7 +244,7 @@ input[type=number],input[type=text],select{border:1px solid var(--line);border-r
   <div class="store">
     <div class="ann" id="ann">Envío gratis en Córdoba Capital (zona centro) · 3 cuotas sin interés</div>
     <div class="hd">
-      <div class="logo" id="logo2">T</div><b id="brand2">Tu Marca</b>
+      <div class="logo full" id="logo2"><img src="logo-adriana-shop.jpg" alt="ADRIANA-SHOP"></div><b id="brand2" style="display:none">ADRIANA-SHOP</b>
       <span class="badge" id="platTag">Tiendanube</span>
       <span class="sp"></span>
       <button class="btn" onclick="openCart()">🛒 Carrito (<span id="cartN">0</span>)</button>
@@ -348,7 +349,7 @@ function copyCfg(){const o={categories:{A:[],B:[]},talles:TSEL.slice()};for(cons
 
 function init(){
  P.forEach(p=>p.sz={});
- S={offered:{},brand:'Tu Marca',color:'#8a4b3c',platform:'tn',captured:[],selected:[],detail:{},img:{},mult:2,round:500,feeTn:2,feeMp:5,
+ S={offered:{},brand:'ADRIANA-SHOP',color:'#7a1c2a',platform:'tn',captured:[],selected:[],detail:{},img:{},mult:2,round:500,feeTn:2,feeMp:5,
   over:{},auth:{},mode:'draft',published:[],aiToday:0,log:[],cart:[],priceSeen:false,minBuy:125000,
   orders:[
    {id:1001,buyer:'María G.',zone:'Córdoba Capital – centro',items:[{id:1,size:'M',qty:2},{id:4,size:'L',qty:3}],status:'pagado',bought:{}},
@@ -402,7 +403,7 @@ $('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)s
 function renderAll(){
  document.documentElement.style.setProperty('--brand',S.color);
  $('#brandName').textContent=S.brand;$('#brand2').textContent=S.brand;
- $('#logo').textContent=$('#logo2').textContent=(S.brand||'T').trim().charAt(0).toUpperCase()||'T';
+ paintLogo();
  renderDash();renderScan();renderStudio();renderPrice();renderPub();renderStore();renderOrders();
 }
 
@@ -520,6 +521,9 @@ function renderStudio(){
    '<p class="small mut" style="margin-top:6px">Revisá que color y detalles coincidan con la prenda real.</p></div></div>';
  }).join('');
 }
+function paintLogo(){const own=(S.brand||'').trim().toUpperCase()==='ADRIANA-SHOP',l=$('#logo'),l2=$('#logo2'),b2=$('#brand2');
+ if(own){l.innerHTML='<img src="isotipo-as.jpg" alt="AS">';l2.className='logo full';l2.innerHTML='<img src="logo-adriana-shop.jpg" alt="ADRIANA-SHOP">';b2.style.display='none'}
+ else{const c=(S.brand||'T').trim().charAt(0).toUpperCase()||'T';l.textContent=c;l2.className='logo';l2.textContent=c;b2.style.display=''}}
 function setMode(id,m){S.img[id].mode=m;S.img[id].out=null;S.img[id].state='none';S.img[id].regen=0;renderAll()}
 function setImg(id,s){S.img[id].state=s;logAdd('Foto '+(s==='approved'?'aprobada':'rechazada')+': '+byId(id).name);renderAll()}
 /* Recorte real y gratis: MODNet corre en el navegador (onnxruntime-web). Se descarga una sola vez (~25 MB). */
@@ -590,7 +594,7 @@ $('#inMul').addEventListener('input',e=>{S.mult=parseFloat(e.target.value);S.pri
 $('#inRound').addEventListener('change',e=>{S.round=parseInt(e.target.value);renderAll()});
 $('#inTn').addEventListener('change',e=>{S.feeTn=parseFloat(e.target.value)||0;renderAll()});
 $('#inMp').addEventListener('change',e=>{S.feeMp=parseFloat(e.target.value)||0;renderAll()});
-$('#inName').addEventListener('input',e=>{S.brand=e.target.value||'Tu Marca';$('#brandName').textContent=S.brand;$('#brand2').textContent=S.brand;$('#logo').textContent=$('#logo2').textContent=S.brand.trim().charAt(0).toUpperCase()||'T'});
+$('#inName').addEventListener('input',e=>{S.brand=e.target.value||'Tu Marca';$('#brandName').textContent=S.brand;$('#brand2').textContent=S.brand;paintLogo()});
 $('#inColor').addEventListener('input',e=>{S.color=e.target.value;document.documentElement.style.setProperty('--brand',S.color)});
 
 /* ---------- publicar ---------- */
