@@ -48,7 +48,7 @@ table{width:100%;border-collapse:collapse} th,td{text-align:left;padding:8px;bor
 .tabs button{border:0;background:none;cursor:pointer;padding:5px 10px;border-radius:99px} .tabs button.on{background:#1f2328;color:#fff}
 .pcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;position:relative}
 .pc{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-size:12px;min-width:0;overflow:hidden;word-break:break-word}.pc .szrow{flex-wrap:wrap}html{scrollbar-gutter:stable}
-.img{aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:#eee} .img svg{width:100%;height:100%;display:block} .img>img{width:100%;height:100%;object-fit:cover;display:block} .proc{width:100%;height:100%;display:grid;place-items:center;background:#f4f2ee} .proc img{width:88%;height:88%;object-fit:contain;mix-blend-mode:multiply} .proc.ai{background:radial-gradient(circle at 50% 40%,#fffdf9,#e7e1d6)} .proc.ai img{filter:drop-shadow(0 8px 8px rgba(0,0,0,.18)) contrast(1.05) saturate(1.05)}
+.img{aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:#eee} .img svg{width:100%;height:100%;display:block} .img>img{width:100%;height:100%;object-fit:cover;display:block} .proc{width:100%;height:100%;display:grid;place-items:center;background:#f4f2ee} .proc img{width:100%;height:100%;object-fit:cover;object-position:50% 30%;filter:contrast(1.04) saturate(1.04) brightness(1.02)} .proc.ai{background:radial-gradient(circle at 50% 40%,#fffdf9,#e7e1d6)} .proc.ai img{filter:contrast(1.06) saturate(1.06) brightness(1.03)}
 .pc .btn{width:100%;margin-top:6px}
 .cathead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--line)}.cathead input{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;width:150px}.cathead .small{margin-left:auto}.cat{border:1px solid var(--line);background:#fff;border-radius:99px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:4px}.cat.on{background:var(--brand);color:#fff;border-color:var(--brand)}.szrow{display:flex;gap:3px;justify-content:center;margin-top:4px}.szrow i{font-style:normal;font-size:10px;border:1px solid var(--line);border-radius:4px;padding:1px 5px}.szrow i.no{opacity:.35;text-decoration:line-through}.pc{cursor:pointer}
 .scanning{position:absolute;inset:0;background:rgba(255,255,255,.8);display:none;place-items:center;font-weight:600;color:var(--brand)}
@@ -361,9 +361,11 @@ function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';cl
 function later(fn,ms){const t=setTimeout(fn,ms);tmr.push(t);return t}
 
 /* ---------- ilustración de prenda ---------- */
-function shirt(p,mode){
- if(p.img){if(mode==='orig')return '<img src="'+p.img+'" alt="'+p.name+'" referrerpolicy="no-referrer">';
-  return '<div class="proc '+(mode==='ai'?'ai':'basic')+'"><img src="'+p.img+'" alt="" referrerpolicy="no-referrer"></div>'}
+const hdUrl=u=>String(u||'').replace(/-480-0\.(\w+)$/,'-1024-1024.$1');   // la tienda guarda el original grande: 480 px es solo la miniatura
+const hdImg=(src,alt,cls)=>'<img '+(cls?'class="'+cls+'" ':'')+'src="'+hdUrl(src)+'" alt="'+alt+'" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\''+src+'\'">';
+function shirt(p,mode,hd){
+ if(p.img){if(mode==='orig')return hd?hdImg(p.img,p.name):'<img src="'+p.img+'" alt="'+p.name+'" referrerpolicy="no-referrer">';
+  return '<div class="proc '+(mode==='ai'?'ai':'basic')+'">'+hdImg(p.img,'')+'</div>'}
  let bg;
  if(mode==='orig') bg='<rect width="100" height="125" fill="#bdb8ae"/><circle cx="14" cy="20" r="11" fill="#a9a398"/><rect x="72" y="58" width="26" height="52" fill="#a39d92"/><rect x="0" y="108" width="100" height="17" fill="#8f897e"/>';
  else if(mode==='ai') bg='<defs><radialGradient id="gai" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#fffdf9"/><stop offset="1" stop-color="#e7e1d6"/></radialGradient></defs><rect width="100" height="125" fill="url(#gai)"/><ellipse cx="50" cy="117" rx="30" ry="4" fill="rgba(0,0,0,.14)"/>';
@@ -458,12 +460,12 @@ function renderScan(){
  const ib=$('#inbox');
  if(!S.captured.length){ib.innerHTML='<div class="empty">Todavía no elegiste productos. Tocá "Elegir para mi tienda" en los que te gusten.</div>';return}
  ib.innerHTML='<table>'+S.captured.map(id=>{const p=byId(id);
-  return '<tr><td><button class="btn sm" title="Quitar" onclick="removeItem('+id+')">✕</button></td><td>'+p.name+'<div class="small mut">'+SRCNAME[p.src]+' · '+fmt(p.cost)+' · <a href="'+(p.url||SRCURL[p.src])+'" target="_blank" rel="noopener">revisar stock ↗</a></div><div class="chips" style="margin-top:4px">'+sizesOf(p).map(z=>'<span class="chip '+((S.offered[id]||[]).includes(z)?'on':'')+'" onclick="toggleSize('+id+',\''+z+'\')">'+z+'</span>').join('')+'</div></td><td>'+(S.detail[id]?'<span class="badge ok">Listo</span>':'<span class="badge">Marcá talles</span>')+'</td></tr>'}).join('')+'</table>';
+  return '<tr><td><button class="btn sm" title="Quitar" onclick="removeItem('+id+')">✕</button></td><td>'+p.name+'<div class="small mut">'+SRCNAME[p.src]+' · '+fmt(p.cost)+' · <a href="'+(p.url||SRCURL[p.src])+'" target="_blank" rel="noopener">revisar stock ↗</a></div><div class="chips" style="margin-top:4px">'+sizesOf(p).map(z=>'<span class="chip '+((S.offered[id]||[]).includes(z)?'on':'')+'" onclick="toggleSize('+id+',\''+z+'\')">'+z+'</span>').join('')+'</div></td><td>'+(S.detail[id]?'<span class="badge ok">Listo</span>':'<span class="badge">Marcá talles</span>')+'</td></tr>'}).join('')+'</table><div style="margin-top:10px"><button class="btn pri" style="width:100%" onclick="show(\'studio\')">Siguiente: Estudio de imagen →</button></div>';
 }
 function openFicha(id){
  const p=byId(id),inb=S.captured.includes(id);
  $('#modal').innerHTML='<div class="row" style="justify-content:space-between"><h2>'+p.name+'</h2><button class="btn sm" onclick="closeM()">✕</button></div>'+
-  '<div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px"><div class="img">'+shirt(p,'orig')+'</div><div>'+
+  '<div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px"><div class="img">'+shirt(p,'orig',true)+'</div><div>'+
   '<div class="mut">'+SRCNAME[p.src]+' · '+catOf(p)+'</div><div style="font-size:20px;margin:4px 0"><b>'+fmt(p.cost)+'</b> <span class="small mut">costo</span></div>'+
   '<p class="small mut">El stock por talle cambia todos los días: confirmalo en la tienda original antes de ofrecerlo.</p><a class="btn" style="display:block;text-align:center;text-decoration:none" href="'+(p.url||SRCURL[p.src])+'" target="_blank" rel="noopener">🔍 Revisar stock en la tienda ↗</a>'+
   '<button class="btn pri" style="width:100%;margin-top:10px" '+(inb?'disabled':'')+' onclick="capture('+id+');closeM()">'+(inb?'✓ Elegido':'Elegir para mi tienda')+'</button></div></div>';
@@ -505,9 +507,9 @@ function renderStudio(){
   let res;
   if(im.state==='processing')res='<div class="img" style="display:grid;place-items:center"><div class="spin"></div></div>';
   else if(im.state==='none')res='<div class="img" style="display:grid;place-items:center;color:#999;font-size:12px;text-align:center;padding:6px">Sin procesar</div>';
-  else res='<div class="img">'+shirt(p,im.mode==='ai'?'ai':'basic')+'</div>';
+  else res='<div class="img">'+shirt(p,im.mode==='ai'?'ai':'basic',true)+'</div>';
   const b=im.state==='approved'?'<span class="badge ok">Aprobada</span>':im.state==='rejected'?'<span class="badge err">Rechazada</span>':im.state==='ready'?'<span class="badge warn">Para revisar</span>':'<span class="badge">'+(im.state==='processing'?'Procesando':'Pendiente')+'</span>';
-  return '<div class="card studio"><div><div class="img">'+shirt(p,'orig')+'</div><div class="cap">Original</div></div><div>'+res+'<div class="cap">Resultado</div></div>'+
+  return '<div class="card studio"><div><div class="img">'+shirt(p,'orig',true)+'</div><div class="cap">Original</div></div><div>'+res+'<div class="cap">Resultado</div></div>'+
    '<div><b>'+p.name+'</b> '+b+'<div class="small mut" style="margin:4px 0 8px">Formato 4:5 · fondo uniforme · tu marca</div>'+
    '<div class="row"><select onchange="setMode('+id+',this.value)"><option value="basic" '+(im.mode==='basic'?'selected':'')+'>Básico (sin costo)</option><option value="ai" '+(im.mode==='ai'?'selected':'')+'>Con IA (Nano Banana)</option></select>'+
    '<button class="btn pri sm" onclick="proc('+id+')" '+(im.state==='processing'?'disabled':'')+'>'+(im.state==='none'?'Procesar':'Regenerar')+' '+(im.mode==='ai'&&im.regen?'('+im.regen+'/2)':'')+'</button></div>'+
