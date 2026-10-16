@@ -1,12 +1,12 @@
 {
-  "run": "2026-10-16T13:41:18.258Z",
+  "run": "2026-10-16T16:04:46.627Z",
   "stores": {
     "A": {
       "ok": true,
-      "count": 749,
+      "count": 754,
       "sinTalleElegido": 0,
       "talles": [],
-      "requests": 110,
+      "requests": 111,
       "categories": [
         {
           "category": "Sastreria",
@@ -29,7 +29,7 @@
         {
           "category": "Camisas",
           "path": "/camisas/",
-          "count": 167,
+          "count": 169,
           "capped": false
         },
         {
@@ -47,19 +47,19 @@
         {
           "category": "Remeras y tops",
           "path": "/remeras/",
-          "count": 208,
+          "count": 207,
           "capped": false
         },
         {
           "category": "Musculosas",
           "path": "/musculosas/",
-          "count": 104,
+          "count": 105,
           "capped": false
         },
         {
           "category": "Vestidos y monos",
           "path": "/vestidos1/",
-          "count": 63,
+          "count": 65,
           "capped": false
         },
         {
@@ -71,7 +71,7 @@
         {
           "category": "Night collection",
           "path": "/linea-noche/",
-          "count": 99,
+          "count": 100,
           "capped": false
         },
         {
@@ -95,13 +95,13 @@
         {
           "category": "Sweaters",
           "path": "/sweaters/",
-          "count": 76,
+          "count": 75,
           "capped": false
         },
         {
           "category": "Camperas",
           "path": "/camperas/",
-          "count": 21,
+          "count": 22,
           "capped": false
         }
       ],
@@ -110,15 +110,15 @@
     },
     "B": {
       "ok": true,
-      "count": 894,
+      "count": 891,
       "sinTalleElegido": 0,
       "talles": [],
-      "requests": 103,
+      "requests": 102,
       "categories": [
         {
           "category": "Remeras y musculosas",
           "path": "/remeras1/",
-          "count": 373,
+          "count": 370,
           "capped": false
         },
         {
