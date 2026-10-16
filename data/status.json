@@ -1,9 +1,9 @@
 {
-  "run": "2026-10-16T10:30:10.072Z",
+  "run": "2026-10-16T11:52:15.961Z",
   "stores": {
     "A": {
       "ok": true,
-      "count": 750,
+      "count": 749,
       "requests": 97,
       "categories": [
         {
@@ -19,7 +19,7 @@
         {
           "category": "Blusas",
           "path": "/camisolas/",
-          "count": 79
+          "count": 78
         },
         {
           "category": "Camisas",
