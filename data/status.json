@@ -1,10 +1,10 @@
 {
-  "run": "2026-10-15T10:43:15.558Z",
+  "run": "2026-10-16T10:30:10.072Z",
   "stores": {
     "A": {
       "ok": true,
-      "count": 740,
-      "requests": 96,
+      "count": 750,
+      "requests": 97,
       "categories": [
         {
           "category": "Sastreria",
@@ -19,7 +19,7 @@
         {
           "category": "Blusas",
           "path": "/camisolas/",
-          "count": 77
+          "count": 79
         },
         {
           "category": "Camisas",
@@ -39,17 +39,17 @@
         {
           "category": "Remeras y tops",
           "path": "/remeras/",
-          "count": 185
+          "count": 193
         },
         {
           "category": "Musculosas",
           "path": "/musculosas/",
-          "count": 85
+          "count": 84
         },
         {
           "category": "Vestidos y monos",
           "path": "/vestidos1/",
-          "count": 55
+          "count": 56
         },
         {
           "category": "Buzos y camperitas engomadas",
@@ -92,8 +92,8 @@
     },
     "B": {
       "ok": true,
-      "count": 799,
-      "requests": 84,
+      "count": 798,
+      "requests": 83,
       "categories": [
         {
           "category": "Remeras y musculosas",
@@ -108,7 +108,7 @@
         {
           "category": "Vestidos importados",
           "path": "/vestidos/",
-          "count": 123
+          "count": 122
         },
         {
           "category": "Fiesta",
