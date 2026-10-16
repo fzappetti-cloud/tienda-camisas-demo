@@ -1,3 +1,10 @@
+# ADRIANA-SHOP · Demo
+
+- **Tienda + panel de alimentación (principal):** https://fzappetti-cloud.github.io/tienda-camisas-demo/ (carpeta `tienda/`, un solo HTML)
+- **Tablero de operaciones (versión anterior):** https://fzappetti-cloud.github.io/tienda-camisas-demo/demo/ (carpeta `demo/`)
+
+Nota: la página de GitHub del repositorio solo muestra archivos; el diseño se ve en los enlaces de arriba.
+
 # Tienda de camisas con marca propia – Demo interactiva
 
 Demo visual (un solo archivo HTML, sin dependencias) del sistema "llave en mano":
