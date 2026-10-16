@@ -298,7 +298,7 @@ let S, tab='A', tmr=[];
 const IDS={A:[1,2,3,4,9,10,11,12],B:[5,6,7,8,13,14,15,16]};
 async function loadCatalog(){
  try{const r=await fetch('../data/catalog.json?'+Date.now());if(!r.ok)return;const c=await r.json();const np=[];let extra={A:100,B:10000};
-  for(const k of ['A','B']){const st=c.stores&&c.stores[k];if(!st)continue;st.products.forEach((x,i)=>{const id=i<8?IDS[k][i]:(++extra[k]);np.push({id:id,name:x.name,src:k,cost:x.price,img:x.image,url:x.url,cat:x.cat||'',avail:x.sz||null,sz:{}})})}
+  for(const k of ['A','B']){const st=c.stores&&c.stores[k];if(!st)continue;st.products.forEach((x,i)=>{const id=i<8?IDS[k][i]:(++extra[k]);np.push({id:id,name:x.name,src:k,cost:x.price,img:x.image,url:x.url,cat:x.cat||'',cats:x.cats||(x.cat?[x.cat]:[]),avail:x.sz||null,sz:{}})})}
   if(np.length>=8){const keep={};P.forEach(p=>{if(p.sz&&Object.keys(p.sz).length)keep[p.id]=p.sz});P.length=0;np.forEach(p=>{if(keep[p.id])p.sz=keep[p.id];P.push(p)});if(c.updated){window.CAT_UPDATED=c.updated}}
   const t=$('#syncTag');if(t&&window.CAT_UPDATED)t.textContent='Catálogo del '+new Date(window.CAT_UPDATED).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
   try{const rc=await fetch('../data/categories.json?'+Date.now());if(rc.ok){const cj=await rc.json();for(const k of ['A','B']){const st=cj.stores&&cj.stores[k];if(st)CATS[k]=st.categories.map(c=>({path:c.path,name:c.name}))}}}catch(e){}
@@ -313,7 +313,7 @@ try{const t=JSON.parse(localStorage.getItem('catSel')||'null');if(t&&t.A&&t.B)SE
 try{const t=JSON.parse(localStorage.getItem('szSel')||'null');if(Array.isArray(t))TSEL=t}catch(e){}
 function saveSel(){try{localStorage.setItem('catSel',JSON.stringify(SEL));localStorage.setItem('szSel',JSON.stringify(TSEL))}catch(e){}}
 function toggleTSel(z){const i=TSEL.indexOf(z);if(i>=0)TSEL.splice(i,1);else TSEL.push(z);saveSel();shown=pg();renderScan()}
-function catList(k){return CATS[k]?CATS[k].map(c=>c.name):[...new Set(P.filter(p=>p.src===k).map(p=>p.cat||'Otras'))]}
+function catList(k){return CATS[k]?CATS[k].map(c=>c.name):[...new Set(P.filter(p=>p.src===k).flatMap(catsOf))]}
 function realSearch(){
  const o={categories:{A:[],B:[]},talles:TSEL.slice()};for(const k of ['A','B'])o.categories[k]=(CATS[k]||[]).filter(c=>SEL[k].includes(c.name)).map(c=>c.path);
  const t=JSON.stringify(o);PENDING={t:Date.now(),q:{A:SEL.A.slice(),B:SEL.B.slice(),t:TSEL.slice()},cfg:t};
@@ -338,7 +338,7 @@ function addByLinkRefresh(){$('#relBox').innerHTML='';renderAll()}
 function doSearch(){const sc=$('#scanning');sc.classList.add('on');
  later(()=>{sc.classList.remove('on');LASTQ={A:SEL.A.slice(),B:SEL.B.slice(),t:TSEL.slice()};shown=pg();cat='Todas';renderAll();
   const n=P.filter(inQ).length;logAdd('Búsqueda: '+(LASTQ.A.length+LASTQ.B.length?'tipos elegidos':'todo lo que encuentra')+(LASTQ.t.length?' · talles '+LASTQ.t.join(', '):' · todos los talles')+' → '+n+' productos');toast('Búsqueda lista: '+n+' productos')},1200)}
-function inQ(p){if(!LASTQ)return false;const any=LASTQ.A.length+LASTQ.B.length>0;if(any&&!LASTQ[p.src].includes(catOf(p)))return false;
+function inQ(p){if(!LASTQ)return false;const any=LASTQ.A.length+LASTQ.B.length>0;if(any&&!catsOf(p).some(c=>LASTQ[p.src].includes(c)))return false;
  return !LASTQ.t.length||!p.avail||p.avail.some(z=>tok(z).some(t=>LASTQ.t.includes(t)))}
 function qChanged(){return LASTQ&&(JSON.stringify([LASTQ.A,LASTQ.B,LASTQ.t])!==JSON.stringify([SEL.A,SEL.B,TSEL]))}
 function toggleCatSel(k,name){const a=SEL[k],i=a.indexOf(name);if(i>=0)a.splice(i,1);else a.push(name);saveSel();shown=pg();cat='Todas';renderScan()}
@@ -425,6 +425,7 @@ const pg=()=>PAGE==='all'?Infinity:PAGE;
 let cat='Todas',shown=pg();
 function setPage(v){PAGE=v==='all'?'all':+v;try{localStorage.setItem('pgSel',String(PAGE))}catch(e){}shown=pg();renderScan()}
 const catOf=p=>p.cat?p.cat:/rayad/i.test(p.name)?'Rayadas':/brod|bordad/i.test(p.name)?'Bordadas':/jean|denim/i.test(p.name)?'Denim':'Otras';
+const catsOf=p=>p.cats&&p.cats.length?p.cats:[catOf(p)];
 const SRCURL={A:'https://vintagebsas.com.ar',B:'https://rumbahelguera.com.ar'};
 const SRCNAME={A:'Vintage BSAS',B:'Rumba Helguera'};
 function renderScan(){
@@ -436,12 +437,12 @@ function renderScan(){
  const list=P.filter(p=>p.src===tab&&inQ(p));
  if(PENDING)$('#catSel').innerHTML+='<div class="small" style="margin-top:6px;padding:6px 8px;background:#fff7e0;border-radius:8px"><b>Búsqueda en curso.</b> Tu selección ya está copiada. En GitHub: pegala en el campo <i>seleccion</i> y tocá <i>Run workflow</i>. Cuando termine (2 a 3 min) tocá <button class="btn sm pri" onclick="viewResult()">↻ Ver resultado</button></div>';
  else if(qChanged())$('#catSel').innerHTML+='<div class="small" style="margin-top:6px;color:#8a5a00">Cambiaste la selección: tocá Buscar para actualizar el catálogo.</div>';
- const cats=['Todas',...new Set(list.map(catOf))];if(!cats.includes(cat))cat='Todas';
+ const cats=['Todas',...new Set(list.flatMap(catsOf))];if(!cats.includes(cat))cat='Todas';
  $('#cats').innerHTML=cats.map(c=>'<button class="cat '+(c===cat?'on':'')+'" data-c="'+c.replace(/"/g,'&quot;')+'">'+c+'</button>').join('');
  const q=($('#q').value||'').toLowerCase();
  const sc=$('#scanning');
  $('#pcards').innerHTML='';$('#pcards').appendChild(sc);
- const filtered=list.filter(p=>(cat==='Todas'||catOf(p)===cat)&&p.name.toLowerCase().includes(q));
+ const filtered=list.filter(p=>(cat==='Todas'||catsOf(p).includes(cat))&&p.name.toLowerCase().includes(q));
  $('#cnt').textContent='Mostrando '+Math.min(shown,filtered.length)+' de '+filtered.length;$('#pgSel').value=String(PAGE);
  filtered.slice(0,shown).forEach(p=>{
   const d=document.createElement('div');d.className='pc';

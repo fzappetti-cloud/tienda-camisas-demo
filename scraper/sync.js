@@ -13,8 +13,8 @@ const LIMITS = {
   timeoutMs: 20000,      // por pedido
   retries: 2,            // reintentos extra por pedido
   pauseMs: 700,          // pausa entre pedidos (no saturar la tienda)
-  maxPagesPerCategory: 25,
-  maxRequestsPerStore: 300,
+  maxPagesPerCategory: 60,     // 12 por página = 720 productos por categoría
+  maxRequestsPerStore: 450,
   maxMsPerStore: 4 * 60 * 1000,
 };
 // Secciones que no son prendas del catálogo (promos que repiten productos, páginas informativas, etc.)
@@ -151,22 +151,29 @@ async function crawlStore(key, get = null, origin = null, selected = null) {
   if (!allCats.length) throw new Error('no se encontraron categorías en el menú');
   // selected = rutas tildadas por la clienta (null = todas; [] = ninguna, solo se detectan las categorías)
   const cats = selected ? allCats.filter(c => selected.includes(c.path)) : allCats;
-  const products = []; const seen = new Set(); const report = []; const errors = [];
+  // Un producto puede estar en varias categorías (p. ej. un vestido en "Vestidos" y en "Fiesta"): se guarda una vez con todas sus categorías.
+  const byUrl = new Map(); const report = []; const errors = [];
   for (const c of cats) {
-    let count = 0;
+    let count = 0; const catSeen = new Set();
     try {
       for (let page = 1; page <= LIMITS.maxPagesPerCategory; page++) {
         const r = await get(origin + c.path + (page > 1 ? '?page=' + page : ''));
         if (r.status !== 200) break;
         const list = parseProducts(r.html, origin + c.path);
-        const fresh = list.filter(p => !seen.has(p.url || p.name));
+        const fresh = list.filter(p => !catSeen.has(p.url || p.name));
         if (!fresh.length) break;                                    // página vacía o repetida: fin de la categoría
-        fresh.forEach(p => { seen.add(p.url || p.name); products.push({ ...p, cat: c.name }); });
+        fresh.forEach(p => {
+          const k = p.url || p.name; catSeen.add(k);
+          const ex = byUrl.get(k);
+          if (ex) { if (!ex.cats.includes(c.name)) ex.cats.push(c.name); }
+          else byUrl.set(k, { ...p, cat: c.name, cats: [c.name] });
+        });
         count += fresh.length;
       }
     } catch (e) { errors.push(c.name + ': ' + String(e.message || e)); }
-    report.push({ category: c.name, path: c.path, count });
+    report.push({ category: c.name, path: c.path, count, capped: count >= LIMITS.maxPagesPerCategory * 12 });
   }
+  const products = [...byUrl.values()];
   if (cats.length && !products.length) throw new Error('sin productos');
   return { name: s.name, url: origin + '/', products, categories: report, allCategories: allCats, errors, requests: budget.requests };
 }

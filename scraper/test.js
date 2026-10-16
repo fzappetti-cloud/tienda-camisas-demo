@@ -39,9 +39,9 @@ assert(pp.image === 'https://x/ninaf.webp', 'imagen en https');
 assert(pp.related.length === 1 && pp.related[0].name === 'Top RELACIONADO' && pp.related[0].sz.join() === 'S', 'relacionados separados: ' + JSON.stringify(pp.related));
 let eP = false; try { parseProductPage('<html>no es un producto</html>', 'https://t/productos/x/'); } catch { eP = true; } assert(eP, 'rechaza páginas que no son de producto');
 // 2) descubrimiento de categorías
-const nav = '<a href="/productos/">Ver colección</a><a href="/camisas/">CAMISAS</a><a href="/todo/">Productos</a><a href="https://www.t.com/remeras/">REMERAS Y TOPS</a><a href="/remeras/tops/">Tops</a><a href="/descuentos/">Descuentos</a><a href="/contacto/">Contacto</a><a href="/kids/">Kids</a><a href="/productos/x/">Prod</a><a href="/camisas/">CAMISAS</a>';
+const nav = '<a href="/productos/">Ver colección</a><a href="/camisas/">CAMISAS</a><a href="/todo/">Productos</a><a href="https://www.t.com/remeras/">REMERAS Y TOPS</a><a href="/remeras/tops/">Tops</a><a href="/fiesta/">FIESTA</a><a href="/descuentos/">Descuentos</a><a href="/contacto/">Contacto</a><a href="/kids/">Kids</a><a href="/productos/x/">Prod</a><a href="/camisas/">CAMISAS</a>';
 const cats = discoverCategories(nav);
-assert(cats.length === 2 && cats[0].name === 'Camisas' && cats[1].path === '/remeras/', 'categorías: ' + JSON.stringify(cats));
+assert(cats.length === 3 && cats[0].name === 'Camisas' && cats[1].path === '/remeras/' && cats[2].path === '/fiesta/', 'categorías: ' + JSON.stringify(cats));
 // 3) recorrido con paginación, 404 con productos de relleno y tope por categoría
 const pages = {
   '/': { status: 200, html: nav },
@@ -49,13 +49,15 @@ const pages = {
   '/camisas/?page=2': { status: 200, html: ld([{ n: 'a3', p: 3 }]) },
   '/camisas/?page=3': { status: 200, html: ld([{ n: 'a3', p: 3 }]) },       // repetida => corta
   '/remeras/': { status: 404, html: ld([{ n: 'relleno', p: 9 }]) },        // 404 => se ignora
+  '/fiesta/': { status: 200, html: ld([{ n: 'a2', p: 2 }, { n: 'b1', p: 5 }]) },  // a2 también está en Camisas
 };
 let calls = 0;
 const get = async (url) => { calls++; const k = url.replace('http://s', ''); const p = pages[k]; return p ? { status: p.status, html: p.status === 200 ? p.html : '' } : { status: 404, html: '' }; };
 crawlStore('A', get, 'http://s').then(st => {
-  assert(st.products.length === 3, 'productos: ' + st.products.length);
-  assert(st.products.every(p => p.cat === 'Camisas'), 'categoría asignada');
+  assert(st.products.length === 4, 'productos (sin duplicar): ' + st.products.length);
+  assert(st.products.filter(p => p.cat === 'Camisas').length === 3 && st.products.find(p => p.name === 'b1').cat === 'Fiesta', 'categoría principal');
+  assert(st.products.find(p => p.name === 'a2').cats.join() === 'Camisas,Fiesta', 'un producto en dos categorías: ' + JSON.stringify(st.products.find(p => p.name === 'a2')));
   assert(!st.products.find(p => p.name === 'relleno'), 'no debe tomar productos de una página 404');
   assert(calls <= 8, 'pocos pedidos: ' + calls);
-  return crawlStore('A', get, 'http://s', ['/camisas/']).then(st2 => { assert(st2.products.length === 3 && st2.categories.length === 1 && st2.allCategories.length === 2, 'solo lo tildado: ' + st2.products.length); return crawlStore('A', get, 'http://s', []); }).then(st3 => { assert(st3.products.length === 0 && st3.allCategories.length === 2, 'sin selección: solo detecta'); console.log('TEST OK (' + calls + ' pedidos simulados)'); });
+  return crawlStore('A', get, 'http://s', ['/camisas/']).then(st2 => { assert(st2.products.length === 3 && st2.categories.length === 1 && st2.allCategories.length === 3, 'solo lo tildado: ' + st2.products.length); return crawlStore('A', get, 'http://s', []); }).then(st3 => { assert(st3.products.length === 0 && st3.allCategories.length === 3, 'sin selección: solo detecta'); console.log('TEST OK (' + calls + ' pedidos simulados)'); });
 }).catch(e => { console.log('FALLÓ', e); process.exit(1); });
