@@ -59,7 +59,7 @@ label.l{display:block;font-size:12.5px;color:var(--mut);margin:8px 0 3px}
 .shophd nav{display:flex;gap:6px;flex-wrap:wrap}
 .hero{border-radius:20px;overflow:hidden;display:grid;grid-template-columns:1.1fr 1fr;background:linear-gradient(120deg,#5c1420,#7a1c2a 60%,#9b3445);color:#fff;min-height:300px}
 .hero .tx{padding:44px 40px;display:flex;flex-direction:column;justify-content:center;gap:12px}
-.hero h2{font-size:38px;line-height:1.1}.hero .ph{background-size:cover;background-position:50% 25%}
+.hero h2{font-size:38px;line-height:1.1}.hero .ph{overflow:hidden;min-height:300px}.hero .ph img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;display:block}
 .hero .btn{align-self:flex-start;background:#fff;color:var(--brand);border-color:#fff}
 .perks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
 .perks div{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px}
@@ -85,7 +85,7 @@ label.l{display:block;font-size:12.5px;color:var(--mut);margin:8px 0 3px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2a1a1d;color:#fff;padding:10px 18px;border-radius:99px;z-index:90;opacity:0;pointer-events:none;transition:.25s;font-size:14px}.toast.on{opacity:1}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .note{background:#fdf6e6;border:1px solid #f0dfb5;border-radius:12px;padding:10px 14px;font-size:13px;color:#6b4e12}
-@media(max-width:860px){.sgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{grid-template-columns:1fr}.hero .ph{min-height:220px;order:-1}.hero .tx{padding:26px}.hero h2{font-size:28px}.perks{grid-template-columns:1fr 1fr}.pd,.g2{grid-template-columns:1fr}.foot{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr}.studio{grid-template-columns:90px 90px 1fr}}
+@media(max-width:860px){.sgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{grid-template-columns:1fr}.hero .ph{min-height:260px;max-height:340px;order:-1}.hero .tx{padding:26px}.hero h2{font-size:28px}.perks{grid-template-columns:1fr 1fr}.pd,.g2{grid-template-columns:1fr}.foot{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr}.studio{grid-template-columns:90px 90px 1fr}}
 </style>
 </head>
 <body>
@@ -248,7 +248,7 @@ function renderShop(){
  let items=list.filter(p=>(F.cat==='Todas'||p.cat===F.cat)&&(!F.size||p.sz.includes(F.size))&&(!F.q||p.n.toLowerCase().includes(F.q.toLowerCase())));
  if(F.sort==='asc')items.sort((a,b)=>price(a)-price(b));if(F.sort==='desc')items.sort((a,b)=>price(b)-price(a));
  const szs=[...new Set(list.flatMap(p=>p.sz))].sort((a,b)=>ALLSZ.indexOf(a)-ALLSZ.indexOf(b));
- b.innerHTML='<div class="hero"><div class="tx"><span class="small" style="letter-spacing:.2em">NUEVA TEMPORADA</span><h2>Camisas y blusas con estilo</h2><p style="opacity:.9">Bordados, lino y sastrería para todos los días. Pagá en 3 cuotas sin interés.</p><button class="btn" onclick="document.getElementById(\'grid\').scrollIntoView()">Ver prendas</button></div><div class="ph" style="background-image:url(\''+first.img+'\')"></div></div>'+
+ b.innerHTML='<div class="hero"><div class="tx"><span class="small" style="letter-spacing:.2em">NUEVA TEMPORADA</span><h2>Camisas y blusas con estilo</h2><p style="opacity:.9">Bordados, lino y sastrería para todos los días. Pagá en 3 cuotas sin interés.</p><button class="btn" onclick="document.getElementById(\'grid\').scrollIntoView()">Ver prendas</button></div><div class="ph">'+imgT(first)+'</div></div>'+
   '<div class="perks"><div>🚚 <b>Envío gratis</b><br><span class="mut">Capital, zona centro</span></div><div>💳 <b>3 cuotas sin interés</b><br><span class="mut">Con tarjeta</span></div><div>📏 <b>Guía de talles</b><br><span class="mut">Te ayudamos a elegir</span></div><div>🔒 <b>Compra segura</b><br><span class="mut">Mercado Pago</span></div></div>'+
   '<div class="filters" id="grid"><input type="text" placeholder="Buscar prenda…" value="'+F.q+'" oninput="F.q=this.value;renderGrid()" style="max-width:240px"><select onchange="F.size=this.value;renderGrid()" style="max-width:150px"><option value="">Todos los talles</option>'+szs.map(z=>'<option '+(F.size===z?'selected':'')+'>'+z+'</option>').join('')+'</select><select onchange="F.sort=this.value;renderGrid()" style="max-width:190px"><option value="rel">Más relevantes</option><option value="asc" '+(F.sort==='asc'?'selected':'')+'>Menor precio</option><option value="desc" '+(F.sort==='desc'?'selected':'')+'>Mayor precio</option></select><span class="mut small" id="cnt"></span></div><div class="sgrid" id="sg"></div>';
  renderGrid()}
