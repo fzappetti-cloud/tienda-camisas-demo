@@ -297,16 +297,21 @@ async function loadCatalog(){
   if(np.length>=8){const keep={};P.forEach(p=>{if(p.sz&&Object.keys(p.sz).length)keep[p.id]=p.sz});P.length=0;np.forEach(p=>{if(keep[p.id])p.sz=keep[p.id];P.push(p)});if(c.updated){window.CAT_UPDATED=c.updated}}
   const t=$('#syncTag');if(t&&window.CAT_UPDATED)t.textContent='Catálogo del '+new Date(window.CAT_UPDATED).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
   try{const rc=await fetch('../data/categories.json?'+Date.now());if(rc.ok){const cj=await rc.json();for(const k of ['A','B']){const st=cj.stores&&cj.stores[k];if(st)CATS[k]=st.categories.map(c=>({path:c.path,name:c.name}))}}}catch(e){}
-  try{if(!localStorage.getItem('catSel')){const rg=await fetch('../data/config.json?'+Date.now());if(rg.ok){const g=await rg.json();for(const k of ['A','B']){const ps=(g.categories&&g.categories[k])||[];SEL[k]=(CATS[k]||[]).filter(c=>ps.includes(c.path)).map(c=>c.name)}}}}catch(e){}
+  try{if(!localStorage.getItem('catSel')){const rg=await fetch('../data/config.json?'+Date.now());if(rg.ok){const g=await rg.json();if(Array.isArray(g.talles)&&!localStorage.getItem('szSel'))TSEL=g.talles.slice();for(const k of ['A','B']){const ps=(g.categories&&g.categories[k])||[];SEL[k]=(CATS[k]||[]).filter(c=>ps.includes(c.path)).map(c=>c.name)}}}}catch(e){}
   renderAll()}catch(e){}
 }
-const CATS={A:null,B:null};let SEL={A:[],B:[]};
+const CATS={A:null,B:null};let SEL={A:[],B:[]};let TSEL=[];const ALLSZ=['XS','S','M','L','XL','XXL'];
+const tok=z=>String(z).toUpperCase().match(/XXXL|XXL|XXS|XL|XS|S|M|L|U/g)||[];
+const szOk=z=>!TSEL.length||tok(z).some(t=>TSEL.includes(t));
+const prodOk=p=>!TSEL.length||!p.avail||p.avail.some(szOk);
 try{const t=JSON.parse(localStorage.getItem('catSel')||'null');if(t&&t.A&&t.B)SEL=t}catch(e){}
-function saveSel(){try{localStorage.setItem('catSel',JSON.stringify(SEL))}catch(e){}}
+try{const t=JSON.parse(localStorage.getItem('szSel')||'null');if(Array.isArray(t))TSEL=t}catch(e){}
+function saveSel(){try{localStorage.setItem('catSel',JSON.stringify(SEL));localStorage.setItem('szSel',JSON.stringify(TSEL))}catch(e){}}
+function toggleTSel(z){const i=TSEL.indexOf(z);if(i>=0)TSEL.splice(i,1);else TSEL.push(z);saveSel();shown=24;renderScan()}
 function catList(k){return CATS[k]?CATS[k].map(c=>c.name):[...new Set(P.filter(p=>p.src===k).map(p=>p.cat||'Otras'))]}
 function toggleCatSel(k,name){const a=SEL[k],i=a.indexOf(name);if(i>=0)a.splice(i,1);else a.push(name);saveSel();shown=24;cat='Todas';renderScan()}
 function allCatSel(k,on){SEL[k]=on?catList(k):[];saveSel();shown=24;cat='Todas';renderScan()}
-function copyCfg(){const o={categories:{A:[],B:[]}};for(const k of ['A','B'])o.categories[k]=(CATS[k]||[]).filter(c=>SEL[k].includes(c.name)).map(c=>c.path);const t=JSON.stringify(o,null,2);try{navigator.clipboard.writeText(t);toast('Selección copiada')}catch(e){prompt('Copiá esto',t)}}
+function copyCfg(){const o={categories:{A:[],B:[]},talles:TSEL.slice()};for(const k of ['A','B'])o.categories[k]=(CATS[k]||[]).filter(c=>SEL[k].includes(c.name)).map(c=>c.path);const t=JSON.stringify(o,null,2);try{navigator.clipboard.writeText(t);toast('Selección copiada')}catch(e){prompt('Copiá esto',t)}}
 
 function init(){
  P.forEach(p=>p.sz={});
@@ -392,8 +397,10 @@ function renderScan(){
  $$('#srcTabs button[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===tab));
  const real=$('#realLink');real.href=SRCURL[tab];
  const all=catList(tab);
- $('#catSel').innerHTML='<div class="small"><b>1 · ¿Qué tipos de prenda querés cargar?</b> <span class="mut">Tildá los que te interesan; solo esos se cargan y se muestran.</span> <button class="btn sm" onclick="allCatSel(\''+tab+'\',true)">Todos</button> <button class="btn sm" onclick="allCatSel(\''+tab+'\',false)">Ninguno</button> <button class="btn sm" onclick="copyCfg()" title="Copia la selección para la carga automática">Copiar selección</button></div><div style="margin-top:6px">'+all.map(c=>'<label style="display:inline-block;margin:0 10px 4px 0;font-size:12px;cursor:pointer"><input type="checkbox" '+(SEL[tab].includes(c)?'checked':'')+' onchange="toggleCatSel(\''+tab+'\',this.dataset.c)" data-c="'+c.replace(/"/g,'&quot;')+'"> '+c+'</label>').join('')+'</div>';
- const list=P.filter(p=>p.src===tab&&SEL[tab].includes(catOf(p)));
+ $('#catSel').innerHTML='<div class="small"><b>Paso 1 · Tipos de prenda que tiene la tienda.</b> <span class="mut">Tildá los que querés vender: el Paso 2 trae el catálogo solo de esos, no todo junto.</span> <button class="btn sm" onclick="allCatSel(\''+tab+'\',true)">Todos</button> <button class="btn sm" onclick="allCatSel(\''+tab+'\',false)">Ninguno</button> <button class="btn sm pri" onclick="copyCfg()" title="Copia la selección para el Paso 2 (Cargar catálogo)">Copiar selección (tipos + talles) para cargar</button></div><div style="margin-top:6px"><span class="small"><b>Talles que ofrezco:</b></span> '+ALLSZ.map(z=>'<span class="chip '+(TSEL.includes(z)?'on':'')+'" onclick="toggleTSel(\''+z+'\')">'+z+'</span>').join('')+' <span class="small mut">'+(TSEL.length?'Solo se muestran y cargan productos con alguno de esos talles disponibles.':'Sin marcar: se muestran todos los talles.')+'</span></div><div style="margin-top:6px">'+all.map(c=>'<label style="display:inline-block;margin:0 10px 4px 0;font-size:12px;cursor:pointer"><input type="checkbox" '+(SEL[tab].includes(c)?'checked':'')+' onchange="toggleCatSel(\''+tab+'\',this.dataset.c)" data-c="'+c.replace(/"/g,'&quot;')+'"> '+c+'</label>').join('')+'</div>';
+ const list=P.filter(p=>p.src===tab&&SEL[tab].includes(catOf(p))&&prodOk(p));
+ const pend=SEL[tab].filter(c=>!P.some(p=>p.src===tab&&catOf(p)===c));
+ if(pend.length)$('#catSel').innerHTML+='<div class="small" style="margin-top:6px;color:#8a5a00">Falta cargar: '+pend.join(', ')+'. Copiá la selección y corré el Paso 2 (Cargar catálogo).</div>';
  const cats=['Todas',...new Set(list.map(catOf))];if(!cats.includes(cat))cat='Todas';
  $('#cats').innerHTML=cats.map(c=>'<button class="cat '+(c===cat?'on':'')+'" data-c="'+c.replace(/"/g,'&quot;')+'">'+c+'</button>').join('');
  const q=($('#q').value||'').toLowerCase();
@@ -405,7 +412,7 @@ function renderScan(){
   const d=document.createElement('div');d.className='pc';
   const inb=S.captured.includes(p.id);
   d.onclick=e=>{if(e.target.tagName!=='BUTTON'&&e.target.tagName!=='A')openFicha(p.id)};
-  d.innerHTML='<div class="img">'+shirt(p,'orig')+'</div><div style="margin-top:6px"><b>'+p.name+'</b></div><div class="mut">Costo '+fmt(p.cost)+'</div>'+(p.avail?'<div class="szrow">'+p.avail.map(z=>'<i>'+z+'</i>').join('')+'</div>':'<div class="small mut">Talles: revisar en la tienda</div>')+
+  d.innerHTML='<div class="img">'+shirt(p,'orig')+'</div><div style="margin-top:6px"><b>'+p.name+'</b></div><div class="mut">Costo '+fmt(p.cost)+'</div>'+(p.avail?'<div class="szrow">'+p.avail.map(z=>'<i class="'+(szOk(z)?'':'no')+'">'+z+'</i>').join('')+'</div>':'<div class="small mut">Talles: revisar en la tienda</div>')+
    '<a class="btn sm" style="display:block;width:100%;margin-top:6px;text-decoration:none;text-align:center" href="'+(p.url||SRCURL[p.src])+'" target="_blank" rel="noopener" title="Abre la ficha en la tienda original para ver talles y stock">🔍 Revisar stock ↗</a>'+
    '<button class="btn '+(inb?'':'pri')+'" '+(inb?'disabled':'')+' onclick="capture('+p.id+')">'+(inb?'✓ Elegido':'Elegir para mi tienda')+'</button>';
   $('#pcards').appendChild(d);
@@ -431,7 +438,8 @@ const sizesOf=p=>p.avail&&p.avail.length?p.avail:SIZES;
 function capture(id){
  if(S.captured.includes(id))return;
  const pp=byId(id);S.captured.push(id);S.selected.push(id);S.offered[id]=[];
- if(pp.avail&&pp.avail.length){S.offered[id]=pp.avail.slice();pp.sz={};pp.avail.forEach(x=>pp.sz[x]=1);S.detail[id]=true;S.img[id]={mode:'basic',state:'none',regen:0};logAdd('Elegido: '+pp.name+' (talles disponibles cargados: '+pp.avail.join(', ')+')')}
+ const av=pp.avail?pp.avail.filter(szOk):[];
+ if(av.length){S.offered[id]=av.slice();pp.sz={};av.forEach(x=>pp.sz[x]=1);S.detail[id]=true;S.img[id]={mode:'basic',state:'none',regen:0};logAdd('Elegido: '+pp.name+' (talles disponibles cargados: '+av.join(', ')+')')}
  else logAdd('Elegido: '+pp.name+' (falta marcar talles)');
  renderAll();
 }

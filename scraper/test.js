@@ -1,4 +1,4 @@
-const { parseSizes, parseProducts, discoverCategories, crawlStore, LIMITS } = require('./sync.js');
+const { applySizes, validateSelection, parseSizes, parseProducts, discoverCategories, crawlStore, LIMITS } = require('./sync.js');
 LIMITS.pauseMs = 0;
 const assert = (c, m) => { if (!c) { console.log('FALLÓ:', m); process.exit(1); } };
 const ld = (items) => '<html>' + items.map(i => `<script type="application/ld+json">${JSON.stringify({ '@type': 'Product', name: i.n, image: ['https://x/' + i.n + '.webp'], offers: { price: String(i.p) }, url: 'https://t/p/' + i.n })}</script>`).join('') + '</html>';
@@ -17,6 +17,16 @@ assert(JSON.stringify(sz['/productos/camisa-a/']) === '["M","L","XL"]', 'talles 
 assert(JSON.stringify(sz['/productos/camisa-b/']) === '["LXL","SM"]', 'talles Rumba: ' + JSON.stringify(sz));
 const withSz = parseProducts(cardV + '<script type="application/ld+json">' + JSON.stringify({'@type':'Product',name:'Camisa A',image:'https://x/a.webp',offers:{price:'10'},url:'https://t/productos/camisa-a/'}) + '</script>', 'https://t/');
 assert(withSz[0] && withSz[0].sz.join() === 'M,L,XL', 'talles asociados al producto');
+// 1c) selección pegada desde el tablero
+assert(JSON.stringify(validateSelection('{"categories":{"A":["/camisas/"]}}').categories) === '{"A":["/camisas/"],"B":[]}', 'selección válida');
+for (const bad of ['no json', '{"categories":{"A":["http://x.com"]}}', '{"categories":{"A":["/a/b/"]}}', '{"categories":{"A":"/camisas/"}}']) { let e = false; try { validateSelection(bad); } catch { e = true; } assert(e, 'debe rechazar: ' + bad); }
+// 1d) cotejo con los talles elegidos (incluye pares de Rumba y productos sin información de talles)
+const ap = applySizes([{ name: 'a', sz: ['S', 'M', 'XL'] }, { name: 'b', sz: ['XXL'] }, { name: 'c', sz: ['SM', 'LXL'] }, { name: 'd' }, { name: 'e', sz: [] }], ['M', 'L']);
+assert(ap.products.map(p => p.name).join() === 'a,c,d' && ap.dropped === 2, 'cotejo de talles: ' + JSON.stringify(ap));
+assert(ap.products[0].sz.join() === 'M', 'solo deja los talles elegidos');
+assert(applySizes([{ name: 'z', sz: ['S'] }], []).products.length === 1, 'sin talles elegidos no filtra');
+assert(validateSelection('{"categories":{"A":["/a/"]},"talles":["S","M"]}').talles.join() === 'S,M', 'talles en selección');
+let eT = false; try { validateSelection('{"talles":["ZZ"]}'); } catch { eT = true; } assert(eT, 'rechaza talles raros');
 // 2) descubrimiento de categorías
 const nav = '<a href="/productos/">Ver colección</a><a href="/camisas/">CAMISAS</a><a href="/todo/">Productos</a><a href="https://www.t.com/remeras/">REMERAS Y TOPS</a><a href="/remeras/tops/">Tops</a><a href="/descuentos/">Descuentos</a><a href="/contacto/">Contacto</a><a href="/kids/">Kids</a><a href="/productos/x/">Prod</a><a href="/camisas/">CAMISAS</a>';
 const cats = discoverCategories(nav);

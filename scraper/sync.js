@@ -147,27 +147,90 @@ async function crawlStore(key, get = null, origin = null, selected = null) {
   return { name: s.name, url: origin + '/', products, categories: report, allCategories: allCats, errors, requests: budget.requests };
 }
 
-async function main() {
-  let prev = {}; try { prev = JSON.parse(fs.readFileSync(OUT, 'utf8')); } catch {}
-  let cfg = {}; try { cfg = JSON.parse(fs.readFileSync(CONFIG, 'utf8')); } catch {}
-  const sel = (cfg && cfg.categories) || {};
-  const next = { updated: new Date().toISOString(), stores: { ...(prev.stores || {}) } };
-  const status = { run: next.updated, stores: {} };
-  const catalogoCats = { updated: next.updated, stores: {} };
+// Talles: en Rumba vienen en pares ("SM" = S y M, "LXL" = L y XL). Un talle de la tienda coincide si alguno de sus componentes fue elegido.
+const KNOWN_SIZES = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'U'];
+const sizeTokens = z => String(z).toUpperCase().match(/XXXL|XXL|XXS|XL|XS|S|M|L|U/g) || [];
+const sizeMatches = (z, wanted) => sizeTokens(z).some(t => wanted.includes(t));
+function applySizes(products, wanted) {
+  if (!wanted || !wanted.length) return { products, dropped: 0 };
+  const out = []; let dropped = 0;
+  for (const p of products) {
+    if (!p.sz) { out.push(p); continue; }                 // la tienda no informó talles: se conserva y ella los revisa
+    const ok = p.sz.filter(z => sizeMatches(z, wanted));
+    if (ok.length) out.push({ ...p, sz: ok }); else dropped++;
+  }
+  return { products: out, dropped };
+}
+
+// Validación de la selección pegada desde el tablero ("Copiar selección"): solo rutas de primer nivel /slug/
+function validateSelection(raw) {
+  let j; try { j = JSON.parse(raw); } catch { throw new Error('la selección no es un JSON válido'); }
+  const out = { categories: {} };
+  for (const k of Object.keys(STORES)) {
+    const arr = j && j.categories && j.categories[k];
+    if (arr === undefined) { out.categories[k] = []; continue; }
+    if (!Array.isArray(arr) || arr.length > 40 || !arr.every(x => typeof x === 'string' && /^\/[a-z0-9-]+\/$/i.test(x))) throw new Error('selección inválida en la tienda ' + k);
+    out.categories[k] = [...new Set(arr)];
+  }
+  const t = j && j.talles;
+  if (t !== undefined && (!Array.isArray(t) || !t.every(x => KNOWN_SIZES.includes(x)))) throw new Error('talles inválidos');
+  out.talles = [...new Set(t || [])];
+  return out;
+}
+const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return d; } };
+const summary = st => Object.fromEntries(Object.entries(st).map(([k, v]) => [k, v.ok ? { ok: true, count: v.count, requests: v.requests, selected: v.selected } : v]));
+
+// PASO 1 · "categorias": lee solo la portada de cada tienda (1 pedido) y guarda los tipos de prenda. No toca el catálogo.
+async function runCategories() {
+  const prev = readJson(CATS, { stores: {} });
+  const out = { updated: new Date().toISOString(), stores: { ...(prev.stores || {}) } };
+  const status = {};
   for (const key of Object.keys(STORES)) {
     try {
-      const picked = cfg.categories ? (Array.isArray(sel[key]) ? sel[key] : []) : null;   // sin config.json: todas (primera vez); con config y vacío: solo detectar
+      const st = await crawlStore(key, null, null, []);
+      out.stores[key] = { name: st.name, categories: st.allCategories };
+      status[key] = { ok: true, count: st.allCategories.length, requests: st.requests };
+    } catch (e) { status[key] = { ok: false, error: String(e.message || e) }; }
+  }
+  if (Object.values(status).some(s => s.ok)) fs.writeFileSync(CATS, JSON.stringify(out));
+  console.log(JSON.stringify({ paso: 'categorias', stores: status }));
+  return Object.values(status).every(s => s.ok);
+}
+
+// PASO 2 · "catalogo": trae SOLO las categorías tildadas (data/config.json). Sin selección no carga nada.
+async function runCatalog() {
+  if (process.env.SELECCION && process.env.SELECCION.trim()) fs.writeFileSync(CONFIG, JSON.stringify(validateSelection(process.env.SELECCION), null, 2));
+  const cfg = readJson(CONFIG, null);
+  const sel = (cfg && cfg.categories) || {};
+  const wanted = (cfg && cfg.talles) || [];
+  if (!Object.values(sel).some(a => Array.isArray(a) && a.length)) { console.log(JSON.stringify({ paso: 'catalogo', error: 'No hay tipos de prenda seleccionados: tildalos en el tablero y pegá la selección. No se cargó nada.' })); return false; }
+  const prev = readJson(OUT, {});
+  const next = { updated: new Date().toISOString(), stores: {} };
+  const status = { run: next.updated, stores: {} };
+  for (const key of Object.keys(STORES)) {
+    const picked = Array.isArray(sel[key]) ? sel[key] : [];
+    if (!picked.length) { status.stores[key] = { ok: true, count: 0, requests: 0, selected: 0 }; continue; }   // tienda sin selección: no se consulta
+    try {
       const st = await crawlStore(key, null, null, picked);
-      catalogoCats.stores[key] = { name: st.name, categories: st.allCategories };
-      if (!picked || picked.length) next.stores[key] = { name: st.name, url: st.url, products: st.products };
-      else if (next.stores[key]) next.stores[key].products = [];
-      status.stores[key] = { ok: true, count: st.products.length, requests: st.requests, categories: st.categories, errors: st.errors, selected: picked ? picked.length : 'todas' };
-    } catch (e) { status.stores[key] = { ok: false, error: String(e.message || e) }; }
+      const f = applySizes(st.products, wanted);
+      next.stores[key] = { name: st.name, url: st.url, products: f.products };
+      status.stores[key] = { ok: true, count: f.products.length, sinTalleElegido: f.dropped, talles: wanted, requests: st.requests, categories: st.categories, errors: st.errors, selected: picked.length };
+    } catch (e) {
+      status.stores[key] = { ok: false, error: String(e.message || e) };
+      if (prev.stores && prev.stores[key]) next.stores[key] = prev.stores[key];     // si falla, conserva la copia anterior de esa tienda
+    }
   }
   fs.writeFileSync(STATUS, JSON.stringify(status, null, 2));
-  if (Object.keys(catalogoCats.stores).length) fs.writeFileSync(CATS, JSON.stringify(catalogoCats));
   if (Object.values(status.stores).some(s => s.ok)) fs.writeFileSync(OUT, JSON.stringify(next));
-  console.log(JSON.stringify({ run: status.run, stores: Object.fromEntries(Object.entries(status.stores).map(([k, v]) => [k, v.ok ? { ok: true, count: v.count, requests: v.requests, selected: v.selected } : v])) }));
-  process.exit(Object.values(status.stores).every(s => s.ok) ? 0 : 1);
+  console.log(JSON.stringify({ paso: 'catalogo', run: status.run, stores: summary(status.stores) }));
+  return Object.values(status.stores).every(s => s.ok);
 }
-if (require.main === module) main(); else module.exports = { parseSizes, parseProducts, discoverCategories, crawlStore, LIMITS };
+
+async function main() {
+  process.on('uncaughtException', e => { console.log(JSON.stringify({ error: String(e.message || e) })); process.exit(1); });
+  const mode = process.argv[2];
+  if (mode !== 'categorias' && mode !== 'catalogo') { console.log('Uso: node scraper/sync.js categorias | catalogo'); process.exit(2); }
+  const ok = mode === 'categorias' ? await runCategories() : await runCatalog();
+  process.exit(ok ? 0 : 1);
+}
+if (require.main === module) main(); else module.exports = { applySizes, parseSizes, parseProducts, discoverCategories, crawlStore, validateSelection, LIMITS };
