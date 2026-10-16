@@ -1,90 +1,108 @@
 {
-  "run": "2026-10-16T11:52:15.961Z",
+  "run": "2026-10-16T13:41:18.258Z",
   "stores": {
     "A": {
       "ok": true,
       "count": 749,
-      "requests": 97,
+      "sinTalleElegido": 0,
+      "talles": [],
+      "requests": 110,
       "categories": [
         {
           "category": "Sastreria",
           "path": "/sastreria/",
-          "count": 14
+          "count": 14,
+          "capped": false
         },
         {
           "category": "Conjuntos",
           "path": "/conjuntos/",
-          "count": 11
+          "count": 12,
+          "capped": false
         },
         {
           "category": "Blusas",
           "path": "/camisolas/",
-          "count": 78
+          "count": 78,
+          "capped": false
         },
         {
           "category": "Camisas",
           "path": "/camisas/",
-          "count": 141
+          "count": 167,
+          "capped": false
         },
         {
           "category": "Chaquetas - blazers - kimonos",
           "path": "/kimonos/",
-          "count": 27
+          "count": 41,
+          "capped": false
         },
         {
           "category": "Chalecos",
           "path": "/chalecos/",
-          "count": 15
+          "count": 20,
+          "capped": false
         },
         {
           "category": "Remeras y tops",
           "path": "/remeras/",
-          "count": 193
+          "count": 208,
+          "capped": false
         },
         {
           "category": "Musculosas",
           "path": "/musculosas/",
-          "count": 84
+          "count": 104,
+          "capped": false
         },
         {
           "category": "Vestidos y monos",
           "path": "/vestidos1/",
-          "count": 56
+          "count": 63,
+          "capped": false
         },
         {
           "category": "Buzos y camperitas engomadas",
           "path": "/buzos-y-camperitas-engomadas/",
-          "count": 9
+          "count": 9,
+          "capped": false
         },
         {
           "category": "Night collection",
           "path": "/linea-noche/",
-          "count": 0
+          "count": 99,
+          "capped": false
         },
         {
           "category": "Capsula talles grandes",
           "path": "/linea-big-size1/",
-          "count": 0
+          "count": 39,
+          "capped": false
         },
         {
           "category": "Pantalones y polleras",
           "path": "/partes-de-abajo/",
-          "count": 24
+          "count": 40,
+          "capped": false
         },
         {
           "category": "Buzos y cardigans",
           "path": "/buzos/",
-          "count": 14
+          "count": 27,
+          "capped": false
         },
         {
           "category": "Sweaters",
           "path": "/sweaters/",
-          "count": 72
+          "count": 76,
+          "capped": false
         },
         {
           "category": "Camperas",
           "path": "/camperas/",
-          "count": 11
+          "count": 21,
+          "capped": false
         }
       ],
       "errors": [],
@@ -92,48 +110,58 @@
     },
     "B": {
       "ok": true,
-      "count": 798,
-      "requests": 83,
+      "count": 894,
+      "sinTalleElegido": 0,
+      "talles": [],
+      "requests": 103,
       "categories": [
         {
           "category": "Remeras y musculosas",
           "path": "/remeras1/",
-          "count": 300
+          "count": 373,
+          "capped": false
         },
         {
           "category": "Camisas y blusas",
           "path": "/camisas-y-blusas/",
-          "count": 241
+          "count": 262,
+          "capped": false
         },
         {
           "category": "Vestidos importados",
           "path": "/vestidos/",
-          "count": 122
+          "count": 132,
+          "capped": false
         },
         {
           "category": "Fiesta",
           "path": "/fiesta/",
-          "count": 2
+          "count": 109,
+          "capped": false
         },
         {
           "category": "Abrigos",
           "path": "/abrigos/",
-          "count": 112
+          "count": 131,
+          "capped": false
         },
         {
           "category": "Sastreria",
           "path": "/sastreria1/",
-          "count": 5
+          "count": 15,
+          "capped": false
         },
         {
           "category": "Partes de abajo",
           "path": "/pantalones/",
-          "count": 0
+          "count": 43,
+          "capped": false
         },
         {
           "category": "Kimonos",
           "path": "/kimonos/",
-          "count": 16
+          "count": 19,
+          "capped": false
         }
       ],
       "errors": [],
