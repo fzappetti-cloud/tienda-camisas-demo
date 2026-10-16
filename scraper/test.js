@@ -9,6 +9,9 @@ assert(r.length === 2 && r[0].name === 'Camisa Bordada VINARA' && r[0].price ===
 const vv = (arr) => JSON.stringify(arr).replace(/"/g, '&quot;');
 const cardV = `<div class="item" data-variants="${vv([{option0:'Blanco',option1:'L',available:true},{option0:'Blanco',option1:'M',available:true},{option0:'Celeste',option1:'M',available:true},{option0:'Celeste',option1:'S',available:false},{option0:'Negro',option1:'XL',available:true}])}" data-quickshop-id="1"><a href="https://t/productos/camisa-a/">x</a></div>`;
 const cardR = `<div data-variants="${vv([{option0:'SM',available:true},{option0:'LXL',available:true}])}"><a href="/productos/camisa-b/">x</a></div>`;
+const big = vv(Array.from({length: 300}, (_, i) => ({ option0: 'Rojo', option1: i === 0 ? 'M' : 'L', available: i < 2, image_url: 'https://x/' + 'y'.repeat(150) + i })));
+const cardBig = `<div data-variants="${big}"><div>${'<span>x</span>'.repeat(300)}<a href="/productos/camisa-c/">x</a></div></div>`;
+assert(parseSizes(cardBig)['/productos/camisa-c/'].join() === 'M,L', 'atributo largo (~40KB): ' + JSON.stringify(parseSizes(cardBig)));
 const sz = parseSizes(cardV + cardR);
 assert(JSON.stringify(sz['/productos/camisa-a/']) === '["M","L","XL"]', 'talles Vintage: ' + JSON.stringify(sz));
 assert(JSON.stringify(sz['/productos/camisa-b/']) === '["LXL","SM"]', 'talles Rumba: ' + JSON.stringify(sz));

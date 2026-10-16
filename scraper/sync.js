@@ -64,7 +64,9 @@ function parseSizes(html) {
   while ((m = re.exec(html))) {
     let arr; try { arr = JSON.parse(m[2].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#39;/g, "'")); } catch { continue; }
     if (!Array.isArray(arr)) continue;
-    const after = html.slice(m.index, m.index + 4000);
+    // el atributo puede pesar ~40 KB: el enlace del producto se busca DESPUÉS de que termina, hasta la próxima tarjeta
+    const end = m.index + m[0].length, nxt = html.indexOf('data-variants=', end);
+    const after = html.slice(end, nxt > 0 ? nxt : end + 15000);
     const h = /href=["'](?:https?:\/\/[^/"']+)?(\/productos\/[^"'?#]+)/i.exec(after);
     if (!h) continue;
     const set = new Set();
