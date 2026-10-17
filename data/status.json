@@ -1,12 +1,12 @@
 {
-  "run": "2026-10-16T16:04:46.627Z",
+  "run": "2026-10-17T10:00:35.772Z",
   "stores": {
     "A": {
       "ok": true,
-      "count": 754,
+      "count": 758,
       "sinTalleElegido": 0,
       "talles": [],
-      "requests": 111,
+      "requests": 112,
       "categories": [
         {
           "category": "Sastreria",
@@ -17,13 +17,13 @@
         {
           "category": "Conjuntos",
           "path": "/conjuntos/",
-          "count": 12,
+          "count": 13,
           "capped": false
         },
         {
           "category": "Blusas",
           "path": "/camisolas/",
-          "count": 78,
+          "count": 79,
           "capped": false
         },
         {
@@ -47,19 +47,19 @@
         {
           "category": "Remeras y tops",
           "path": "/remeras/",
-          "count": 207,
+          "count": 209,
           "capped": false
         },
         {
           "category": "Musculosas",
           "path": "/musculosas/",
-          "count": 105,
+          "count": 106,
           "capped": false
         },
         {
           "category": "Vestidos y monos",
           "path": "/vestidos1/",
-          "count": 65,
+          "count": 66,
           "capped": false
         },
         {
@@ -83,7 +83,7 @@
         {
           "category": "Pantalones y polleras",
           "path": "/partes-de-abajo/",
-          "count": 40,
+          "count": 41,
           "capped": false
         },
         {
