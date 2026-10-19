@@ -1,5 +1,5 @@
 {
-  "run": "2026-10-18T10:13:25.968Z",
+  "run": "2026-10-19T11:50:37.656Z",
   "stores": {
     "A": {
       "ok": true,
@@ -110,15 +110,15 @@
     },
     "B": {
       "ok": true,
-      "count": 891,
+      "count": 895,
       "sinTalleElegido": 0,
       "talles": [],
-      "requests": 102,
+      "requests": 103,
       "categories": [
         {
           "category": "Remeras y musculosas",
           "path": "/remeras1/",
-          "count": 370,
+          "count": 374,
           "capped": false
         },
         {
