@@ -1,9 +1,9 @@
 {
-  "run": "2026-10-19T11:50:37.656Z",
+  "run": "2026-10-20T10:48:36.170Z",
   "stores": {
     "A": {
       "ok": true,
-      "count": 758,
+      "count": 764,
       "sinTalleElegido": 0,
       "talles": [],
       "requests": 112,
@@ -23,13 +23,13 @@
         {
           "category": "Blusas",
           "path": "/camisolas/",
-          "count": 79,
+          "count": 80,
           "capped": false
         },
         {
           "category": "Camisas",
           "path": "/camisas/",
-          "count": 169,
+          "count": 170,
           "capped": false
         },
         {
@@ -47,19 +47,19 @@
         {
           "category": "Remeras y tops",
           "path": "/remeras/",
-          "count": 209,
+          "count": 211,
           "capped": false
         },
         {
           "category": "Musculosas",
           "path": "/musculosas/",
-          "count": 106,
+          "count": 108,
           "capped": false
         },
         {
           "category": "Vestidos y monos",
           "path": "/vestidos1/",
-          "count": 66,
+          "count": 67,
           "capped": false
         },
         {
@@ -71,7 +71,7 @@
         {
           "category": "Night collection",
           "path": "/linea-noche/",
-          "count": 100,
+          "count": 101,
           "capped": false
         },
         {
@@ -110,15 +110,15 @@
     },
     "B": {
       "ok": true,
-      "count": 895,
+      "count": 905,
       "sinTalleElegido": 0,
       "talles": [],
-      "requests": 103,
+      "requests": 104,
       "categories": [
         {
           "category": "Remeras y musculosas",
           "path": "/remeras1/",
-          "count": 374,
+          "count": 386,
           "capped": false
         },
         {
@@ -148,7 +148,7 @@
         {
           "category": "Sastreria",
           "path": "/sastreria1/",
-          "count": 15,
+          "count": 17,
           "capped": false
         },
         {
