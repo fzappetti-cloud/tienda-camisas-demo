@@ -140,6 +140,7 @@ label.l{display:block;font-size:12.5px;color:var(--mut);margin:8px 0 3px}
 .ckrow{display:flex;gap:10px;padding:8px 0;align-items:center;font-size:13.5px}.ckrow .im{width:52px;aspect-ratio:4/5;overflow:hidden;flex:none;background:#eee}.ckrow img{width:100%;height:100%;object-fit:cover}
 .cfgt{width:100%;font-size:13px}.cfgt td,.cfgt th{padding:7px 6px;vertical-align:top}
 @media(max-width:860px){.tnhead{grid-template-columns:1fr auto;gap:8px;padding:10px 14px}.tlogo{grid-column:1;grid-row:1}.tacts{grid-column:2;grid-row:1}.tsearch{grid-column:1/-1;grid-row:2;max-width:none}.tacts .acc span{display:none}.tacts .acc#cartBtn span{display:inline}.slide{grid-template-columns:1fr}.slide .stx{background:linear-gradient(0deg,rgba(246,239,230,.95) 55%,transparent);justify-content:flex-end;padding:0 5% 34px}.slide .simg{position:absolute;inset:0}.cbanners{grid-template-columns:1fr}.tgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.infob{grid-template-columns:1fr}.infob div{border-right:0;border-bottom:1px solid #eee}.catlay{grid-template-columns:1fr}.prodlay{grid-template-columns:1fr}.gal{grid-template-columns:1fr}.gal .th{flex-direction:row;order:2}.gal .th div{width:60px}.tnfoot{grid-template-columns:1fr 1fr}.ckout{grid-template-columns:1fr}.tnnav{gap:14px}}
+.wab{width:100%;margin-top:10px;border:1px solid #25d366;background:#fff;color:#128c4a;height:42px;font-size:13px;cursor:pointer;letter-spacing:.04em}.wab:hover{background:#f0fbf4}.alog div{padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}.alog small{color:var(--mut)}
 </style>
 </head>
 <body>
@@ -167,10 +168,10 @@ label.l{display:block;font-size:12.5px;color:var(--mut);margin:8px 0 3px}
 <!-- ================= TIENDA ================= -->
 <section class="view" id="v-shop">
   <div class="row" style="margin-bottom:10px">
-    <span class="badge ok">Diseño: Río (Tiendanube)</span>
-    <span class="small mut">Así se vería tu tienda con la plantilla Río, con tu marca. Los pagos y el stock son simulados.</span>
+    <span class="badge ok">Tienda propia · diseño a medida</span>
+    <span class="small mut">Tienda propia con tu marca: el precio lo calcula el servidor, el pago lo procesa Mercado Pago y vos recibís las alertas. Pagos y stock son simulados.</span>
     <span class="sp"></span>
-    <button class="btn sm" onclick="openCfg()">⚙ Cómo se configura en Tiendanube</button>
+    <button class="btn sm" onclick="openCfg()">⚙ Cómo funciona por dentro</button>
   </div>
   <div class="tn" id="tn">
     <div class="adbar"><div class="adtrack" id="adtrack"></div></div>
@@ -187,7 +188,7 @@ label.l{display:block;font-size:12.5px;color:var(--mut);margin:8px 0 3px}
       <div><b>Medios de pago</b><p>Mercado Pago<br>Tarjetas de crédito y débito</p></div>
       <div><b>Seguinos</b><p>Instagram · WhatsApp</p></div>
     </footer>
-    <a class="wa" onclick="toast('Demo: abre el WhatsApp de la tienda')" aria-label="WhatsApp">💬</a>
+    <a class="wa" onclick="showWA('Hola! Quería hacer una consulta sobre la tienda.')" aria-label="WhatsApp">💬</a>
   </div>
 </section>
 
@@ -196,8 +197,9 @@ label.l{display:block;font-size:12.5px;color:var(--mut);margin:8px 0 3px}
 <section class="view" id="v-orders">
   <h1 style="font-size:30px">Pedidos y compras</h1>
   <p class="mut" style="max-width:760px">Cada venta llega con los datos completos del comprador. Los pedidos pagos se juntan en una lista de compra por distribuidora: comprás ahí y despachás.</p>
-  <div class="card" style="margin:16px 0;overflow:auto"><table><thead><tr><th>#</th><th>Comprador</th><th>Contacto y dirección</th><th>Detalle</th><th>Total</th><th>Estado</th></tr></thead><tbody id="otable"></tbody></table></div>
+  <div class="card" style="margin:16px 0;overflow:auto"><table><thead><tr><th>#</th><th>Comprador</th><th>Contacto y dirección</th><th>Detalle</th><th>Total</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="otable"></tbody></table></div>
   <div class="g2" id="groups"></div>
+  <div class="card" style="margin-top:16px"><h3 style="font-size:20px">Alertas enviadas</h3><p class="mut small">Lo que le llega a la dueña y a las compradoras en cada paso. Acá se ven los avisos de esta sesión.</p><div class="alog" id="alerts"></div></div>
 </section>
 </main>
 
@@ -218,7 +220,7 @@ const byId=id=>P.find(p=>p.id===id);
 const hd=u=>u;const th=u=>u.replace('-1024-1024.','-480-0.');
 const imgT=(p,alt)=>'<img src="'+p.img+'" alt="'+(alt||p.n)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\''+th(p.img)+'\'">';
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2400)}
-function fresh(){return{step:1,view:'panel',dist:{A:true,B:true},cats:[],sizes:[],found:null,searching:false,picked:new Set(),imgs:{},mult:2,pub:[],cart:[],orders:[
+function fresh(){return{step:1,view:'panel',dist:{A:true,B:true},cats:[],sizes:[],found:null,searching:false,picked:new Set(),imgs:{},mult:2,pub:[],cart:[],alerts:[],orders:[
  {id:1001,name:'María',last:'González',email:'maria@mail.com',tel:'351 555-0101',addr:'Obispo Trejo 450, Córdoba Capital',zone:'centro',items:[{id:14,size:'M',qty:1},{id:16,size:'L',qty:1}],status:'pagado',bought:{}},
  {id:1002,name:'Lucía',last:'Romero',email:'lucia@mail.com',tel:'3544 55-0202',addr:'San Martín 120, Villa Dolores',zone:'vd',items:[{id:17,size:'L',qty:2}],status:'pagado',bought:{}}]}}
 let S=fresh();
@@ -320,7 +322,7 @@ function renderShop(){
  $('#tnnav').innerHTML='<a onclick="go(\'home\')">Inicio</a><div class="dd"><a onclick="this.parentNode.classList.toggle(\'open\')">Ver colección ▾</a><div class="menu"><a onclick="go(\'cat\',\'Todas\')">Ver todo</a>'+cats.map(c=>'<a onclick="go(\'cat\',\''+c+'\')">'+c+'</a>').join('')+'</div></div><a onclick="go(\'cat\',\'Todas\')">Novedades</a><a onclick="go(\'info\')">Cómo comprar</a>';
  const b=$('#tnbody');
  if(!list.length){b.innerHTML='<div class="empty" style="margin:30px"><h3 style="font-size:22px;color:var(--ink)">Tu tienda todavía está vacía</h3><p>Se llena con lo que publiques desde el Panel de alimentación.</p><button class="btn pri" onclick="show(\'panel\')">Ir al panel</button> <button class="btn" onclick="$(\'#quick\').click()">▶ Ver demo rápida</button></div>';return}
- ({home:pHome,cat:pCat,prod:pProd,checkout:pCheckout,thanks:pThanks,info:pInfo}[R.page]||pHome)(b,list,cats)}
+ ({home:pHome,cat:pCat,prod:pProd,checkout:pCheckout,mp:pMP,thanks:pThanks,info:pInfo}[R.page]||pHome)(b,list,cats)}
 function pHome(b,list,cats){
  const T=[['NUEVA TEMPORADA','Camisas y blusas con estilo'],['BORDADOS Y LINO','Prendas para todos los días'],['PAGÁ COMO QUIERAS','3 cuotas sin interés']];
  const sl=T.map((t,i)=>{const p=list[i%list.length];return '<div class="slide '+(i===R.slide?'on':'')+'"><div class="stx"><small style="letter-spacing:.2em">'+t[0]+'</small><h2>'+t[1]+'</h2><button class="sbtn" onclick="go(\'cat\',\'Todas\')">Ver colección</button></div><div class="simg">'+pimg(p,0)+'</div></div>'}).join('');
@@ -342,7 +344,7 @@ function pProd(b,list){
  b.innerHTML='<div class="crumbs"><a onclick="go(\'home\')">Inicio</a> / <a onclick="go(\'cat\',\''+p.cat+'\')">'+p.cat+'</a> / '+p.n+'</div><div class="prodlay"><div class="gal"><div class="th">'+[0,1,2].map(i=>'<div class="'+(R.gi===i?'on':'')+'" onclick="R.gi='+i+';renderShop()">'+pimg(p,i)+'</div>').join('')+'</div><div class="mainimg">'+pimg(p,R.gi)+'</div></div>'+
  '<div class="pinfo"><h1>'+p.n+'</h1><div class="p1">'+fmt(price(p))+'</div><div class="cu2">3 cuotas de '+fmt(price(p)/3)+' sin interés</div>'+
  '<div class="lb">Talle</div><div class="tsz">'+p.sz.map(z=>{const s=stk(p,z);return '<span class="'+(R.psize===z?'on':'')+'" onclick="R.psize=\''+z+'\';renderShop()">'+z+(s<=2?'<br><small style="color:var(--warn)">Quedan '+s+'</small>':'')+'</span>'}).join('')+'</div>'+
- '<div class="qrow"><div class="qty"><button onclick="R.pqty=Math.max(1,R.pqty-1);renderShop()">−</button><b>'+R.pqty+'</b><button onclick="R.pqty++;renderShop()">+</button></div><button class="addb" onclick="addCart()">Agregar al carrito</button></div>'+
+ '<div class="qrow"><div class="qty"><button onclick="R.pqty=Math.max(1,R.pqty-1);renderShop()">−</button><b>'+R.pqty+'</b><button onclick="R.pqty++;renderShop()">+</button></div><button class="addb" onclick="addCart()">Agregar al carrito</button></div><button class="wab" onclick="waProd()">💬 Consultar por WhatsApp</button>'+
  '<div style="margin-top:22px"><details class="acc2"><summary>📏 Guía de talles</summary><div class="bd"><label class="l">Contorno de busto (cm)</label><input type="number" id="bust" placeholder="Ej: 92" oninput="recSize()" style="max-width:160px"><div id="rec" class="small" style="margin:6px 0"></div><table class="small"><tr><th>Talle</th><th>Busto (cm)</th></tr>'+Object.entries(GUIDE).filter(([k])=>p.sz.includes(k)).map(([k,v])=>'<tr><td>'+k+'</td><td>'+v[0]+' – '+v[1]+'</td></tr>').join('')+'</table></div></details>'+
  '<details class="acc2" open><summary>Descripción</summary><div class="bd">'+p.n+'. Prenda seleccionada, de buen calce. Las fotos son orientativas; el color puede variar levemente según tu pantalla.</div></details>'+
  '<details class="acc2"><summary>Envíos y entrega</summary><div class="bd">Retiro en local sin costo · Córdoba Capital zona centro: gratis · Villa Dolores: martes y viernes ($ 3.500). Entrega en 5 a 10 días hábiles.</div></details>'+
@@ -378,21 +380,40 @@ function pCheckout(b){
  '<div class="ckbox"><h4>1 · Contacto</h4><label class="l">Email</label><input type="email" id="fe" value="'+ckv('fe')+'"></div>'+
  '<div class="ckbox"><h4>2 · Tus datos</h4><div class="g2"><div><label class="l">Nombre</label><input type="text" id="fn" value="'+ckv('fn')+'"></div><div><label class="l">Apellido</label><input type="text" id="fl" value="'+ckv('fl')+'"></div><div><label class="l">Teléfono</label><input type="tel" id="ft" value="'+ckv('ft')+'"></div></div></div>'+
  '<div class="ckbox"><h4>3 · Entrega</h4>'+Object.entries(ZONES).map(([k,v])=>'<div class="ckopt '+(ZONE===k?'on':'')+'" onclick="setZone(\''+k+'\')"><span>'+(ZONE===k?'◉':'○')+'</span><span style="flex:1">'+v[0]+'</span><b>'+(v[1]?fmt(v[1]):'Gratis')+'</b></div>').join('')+(ZONE==='retiro'?'':'<label class="l">Dirección de entrega</label><input type="text" id="fa" value="'+ckv('fa')+'">')+'</div>'+
- '<div class="ckbox"><h4>4 · Pago</h4><div class="ckopt on"><span>◉</span><span style="flex:1">Mercado Pago · tarjeta de crédito (3 cuotas sin interés)</span></div><div class="ckopt"><span>○</span><span style="flex:1">Mercado Pago · tarjeta de débito</span></div><div class="note">Simulación: no se cobra nada ni se piden datos de tarjeta reales. En la tienda real el pago lo procesa Mercado Pago.</div></div>'+
+ '<div class="ckbox"><h4>4 · Pago</h4><div class="ckopt on"><span>◉</span><span style="flex:1">Mercado Pago · tarjeta, dinero en cuenta o débito</span></div><div class="note">Pagás en la pantalla segura de Mercado Pago. Esta tienda nunca ve ni guarda los datos de tu tarjeta.</div></div>'+
  '</div><div><div class="ckbox"><h4>Resumen de tu compra</h4>'+S.cart.map(c=>{const p=byId(c.id);return '<div class="ckrow"><div class="im">'+imgT(p)+'</div><div style="flex:1">'+p.n+'<div class="small mut">Talle '+c.size+' · x'+c.qty+'</div></div><b>'+fmt(price(p)*c.qty)+'</b></div>'}).join('')+
- '<table style="margin-top:10px"><tr><td>Subtotal</td><td style="text-align:right">'+fmt(sub)+'</td></tr><tr><td>Envío</td><td style="text-align:right">'+(ship?fmt(ship):'Gratis')+'</td></tr><tr><td><b>Total</b></td><td style="text-align:right"><b style="font-size:19px">'+fmt(sub+ship)+'</b></td></tr></table><button class="addb" id="payb" style="width:100%;margin-top:14px" onclick="pay()">Pagar '+fmt(sub+ship)+'</button></div></div></div>'}
-function pay(){
- saveCk();const b=$('#payb');b.disabled=true;b.textContent='Procesando pago…';
- setTimeout(()=>{const id=1000+S.orders.length+1,f=k=>ckv(k);
-  S.orders.unshift({id,name:f('fn'),last:f('fl'),email:f('fe'),tel:f('ft'),addr:ZONE==='retiro'?'Retira en local':f('fa'),zone:ZONE,items:S.cart.map(c=>({...c})),status:'pagado',bought:{}});
-  S.cart=[];R.last=id;R.ck=null;go('thanks')},1300)}
-function pThanks(b){b.innerHTML='<div style="text-align:center;padding:50px 20px"><div style="font-size:54px">✅</div><h2>¡Pago aprobado!</h2><p class="mut">Pedido #'+R.last+'. Te enviamos el detalle por email. En la pestaña <b>Pedidos</b> lo ves como lo recibe la dueña de la tienda.</p><div class="row" style="justify-content:center"><button class="btn" onclick="go(\'home\')">Seguir comprando</button><button class="btn pri" onclick="show(\'orders\')">Ver el pedido en el panel →</button></div></div>'}
+ '<table style="margin-top:10px"><tr><td>Subtotal</td><td style="text-align:right">'+fmt(sub)+'</td></tr><tr><td>Envío</td><td style="text-align:right">'+(ship?fmt(ship):'Gratis')+'</td></tr><tr><td><b>Total</b></td><td style="text-align:right"><b style="font-size:19px">'+fmt(sub+ship)+'</b></td></tr></table><button class="addb" id="payb" style="width:100%;margin-top:14px" onclick="toMP()">Pagar con Mercado Pago · '+fmt(sub+ship)+'</button></div></div></div>'}
+function addAlert(to,ch,msg){S.alerts.unshift({to,ch,msg,t:new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})})}
+function srvTotal(items,zone){return items.reduce((a,c)=>a+price(byId(c.id))*c.qty,0)+ZONES[zone][1]}
+function toMP(){saveCk();R.pend={zone:ZONE,items:S.cart.map(c=>({...c})),ck:{...R.ck}};go('mp')}
+function pMP(b){
+ const o=R.pend;if(!o){go('home');return}const tot=srvTotal(o.items,o.zone);
+ b.innerHTML='<div style="max-width:620px;margin:30px auto;padding:0 18px"><div class="note" style="margin-bottom:12px">PANTALLA SIMULADA. En la tienda real acá se abre la página segura de pago de Mercado Pago; esta demo no pide datos de tarjeta.</div><div class="ckbox"><h4>Pago de tu compra en ADRIANA-SHOP</h4>'+o.items.map(c=>{const p=byId(c.id);return '<div class="ckrow"><div class="im">'+imgT(p)+'</div><div style="flex:1">'+p.n+'<div class="small mut">Talle '+c.size+' · x'+c.qty+'</div></div><b>'+fmt(price(p)*c.qty)+'</b></div>'}).join('')+'<table style="margin-top:8px"><tr><td><b>Total a pagar</b></td><td style="text-align:right"><b style="font-size:20px">'+fmt(tot)+'</b></td></tr></table><p class="small" style="color:var(--ok);margin:8px 0">✔ El servidor recalculó este total con los precios cargados por la dueña. El precio nunca se toma del navegador.</p><div id="mpsteps" class="small"></div><div class="row" id="mpbtns" style="margin-top:12px"><button class="addb" onclick="mpOk()">Simular pago aprobado</button><button class="btn" onclick="mpNo()">Simular pago rechazado</button></div></div></div>'}
+function mpNo(){R.pend=null;go('checkout');toast('Pago rechazado: no se generó ningún pedido')}
+function mpOk(){
+ $('#mpbtns').innerHTML='';const st=['1 · Mercado Pago aprueba el pago','2 · Mercado Pago avisa al servidor por su cuenta (webhook)','3 · El servidor verifica el pago con Mercado Pago y registra el pedido'];
+ st.forEach((t,i)=>setTimeout(()=>{const e=$('#mpsteps');if(e)e.innerHTML+='<div>✅ '+t+'</div>'},i*700));
+ setTimeout(()=>{const o=R.pend;if(!o)return;const ck=o.ck||{},f=k=>ck[k]!==undefined?ck[k]:CKD[k],id=1000+S.orders.length+1;
+  S.orders.unshift({id,name:f('fn'),last:f('fl'),email:f('fe'),tel:f('ft'),addr:o.zone==='retiro'?'Retira en local':f('fa'),zone:o.zone,items:o.items,status:'pagado',bought:{}});
+  addAlert('Dueña','Email + WhatsApp','💰 Nueva venta #'+id+': '+fmt(srvTotal(o.items,o.zone))+'. Pago aprobado, falta comprar a la distribuidora.');
+  addAlert('Compradora','Email','Recibimos tu pago. Pedido #'+id+' en preparación.');
+  S.cart=[];R.last=id;R.ck=null;R.pend=null;go('thanks')},2400)}
+function waProd(){const p=byId(R.pid);showWA('Hola! Me interesa «'+p.n+'»'+(R.psize?', talle '+R.psize:'')+'. ¿Está disponible?')}
+function showWA(msg){
+ $('#modProd').innerHTML='<button class="x" onclick="closeAll()">✕</button><h2 style="font-size:22px">💬 Consulta por WhatsApp</h2><p class="mut small">Así llega el mensaje a la dueña, ya armado con la prenda y el talle. La compradora solo toca "Enviar".</p><div style="background:#dcf8c6;border-radius:12px;padding:12px 14px;margin:10px 0">'+msg+'</div><p class="small mut">En la tienda real este botón abre WhatsApp con el número de la dueña y este texto escrito.</p><button class="btn pri" onclick="closeAll()">Entendido</button>';
+ $('#ovProd').classList.add('on')}
+function dispatch(id){const o=S.orders.find(x=>x.id===id),e=$('#trk'+id),code=(e&&e.value.trim())||'sin seguimiento';
+ o.status='despachado';o.trk=code;addAlert('Compradora','Email','📦 Tu pedido #'+id+' fue despachado. Seguimiento: '+code+'.');toast('Pedido despachado y compradora avisada');renderOrders()}
+function pThanks(b){b.innerHTML='<div style="text-align:center;padding:50px 20px"><div style="font-size:54px">✅</div><h2>¡Pago aprobado!</h2><p class="mut">Pedido #'+R.last+'. Te enviamos el detalle por email. En la pestaña <b>Pedidos</b> ves cómo lo recibe la dueña y las alertas que se disparan.</p><div class="row" style="justify-content:center"><button class="btn" onclick="go(\'home\')">Seguir comprando</button><button class="btn pri" onclick="show(\'orders\')">Ver el pedido en el panel →</button></div></div>'}
 function pInfo(b){b.innerHTML='<div class="crumbs"><a onclick="go(\'home\')">Inicio</a> / Cómo comprar</div><div class="tsec" style="max-width:760px;margin:auto"><h3>Cómo comprar</h3><ol style="line-height:1.9"><li>Elegí la prenda y tu talle (te ayudamos con la guía de talles).</li><li>Agregala al carrito y calculá tu envío.</li><li>Pagá con Mercado Pago, en hasta 3 cuotas sin interés.</li><li>Preparamos tu pedido y te avisamos cuando salga. Entrega en 5 a 10 días hábiles.</li></ol><h3 style="margin-top:30px">Preguntas frecuentes</h3><details class="acc2"><summary>¿Tienen stock?</summary><div class="bd">Trabajamos bajo pedido: confirmamos disponibilidad al armar tu pedido.</div></details><details class="acc2"><summary>¿Puedo cambiar una prenda?</summary><div class="bd">Sí, dentro de los 10 días de recibida.</div></details><details class="acc2"><summary>¿Hacen envíos a mi ciudad?</summary><div class="bd">Córdoba Capital, Villa Dolores y retiro en local. Escribinos por WhatsApp para otras zonas.</div></details></div>'}
 
 /* ---------- cómo se configura en Tiendanube ---------- */
 function openCfg(){
- const rows=[['Barra de anuncios (franja bordó)','Nativo','Editor › Diseño › Barra de anuncios'],['Logo y menú','Nativo','Editor › Logo · Mi tienda › Navegación'],['Slider principal de Inicio','Nativo','Editor › Inicio › Slider (fotos + texto + botón)'],['Banners de categorías','Nativo','Editor › Inicio › Banners'],['Productos destacados','Nativo','Editor › Inicio › Productos destacados'],['Franja Envío / Cuotas / Compra segura','Nativo','Editor › Inicio › Información'],['Filtros, orden y buscador','Nativo','Automáticos al cargar productos con variante "Talle"'],['Ficha de producto (talle, cuotas, acordeones)','Nativo','Se arma con la variante Talle y la descripción de cada producto'],['Botón de WhatsApp flotante','Nativo','Editor › Diseño › WhatsApp'],['Cálculo de envío por zona / retiro','Nativo','Configuración › Medios de envío'],['Pago con Mercado Pago','Nativo','Configuración › Medios de pago'],['Guía de talles con calculadora de busto','Extra','No viene en la plantilla: se cargaría como tabla en la descripción, o con código (Plan Impulso o superior)'],['Aviso de pocas unidades (Quedan 2)','Extra','Depende de cargar stock real; en este modelo sin stock no aplica'],['Fotos con fondo uniforme','Fuera de Tiendanube','Panel de alimentación: se suben ya procesadas']];
- $('#modProd').innerHTML='<button class="x" onclick="closeAll()">✕</button><h2 style="font-size:24px">Cómo se configura esto en Tiendanube</h2><p class="mut small">Plantilla de referencia: Río. Los nombres de los menús son aproximados y pueden variar: se confirman al configurar la tienda real.</p><table class="cfgt"><tr><th>Elemento</th><th></th><th>Dónde</th></tr>'+rows.map(r=>'<tr><td>'+r[0]+'</td><td><span class="badge '+(r[1]==='Nativo'?'ok':'warn')+'">'+r[1]+'</span></td><td class="small">'+r[2]+'</td></tr>').join('')+'</table>';
+ const risks=[['El precio','Lo calcula siempre el servidor; el navegador solo envía qué prenda y cuántas.'],['"Pagado" sin pagar','El pedido pasa a pagado solo cuando Mercado Pago avisa al servidor (webhook) y se verifica con su API.'],['Claves de cobro','Viven como variables secretas en Railway; nunca en el código ni en GitHub.'],['Datos de tarjeta','El pago se hace en la página de Mercado Pago: la tienda nunca los ve.'],['Avisos duplicados o perdidos','Se guarda el número de pago para no procesarlo dos veces; reintentos con límite.'],['Panel','Usuario y clave fuertes, con límite de intentos.']];
+ $('#modProd').innerHTML='<button class="x" onclick="closeAll()">✕</button><h2 style="font-size:24px">Cómo funciona por dentro (tienda propia)</h2><p class="mut small">Lo que la clienta ve es la tienda y el panel. Atrás trabaja un servidor chico en Railway que corre solo cuando hay una compra.</p>'+
+ '<div class="note" style="line-height:1.9;margin:10px 0"><b>Flujo de una compra</b><br>① Compradora elige y paga → ② el servidor recalcula el total → ③ pago en Mercado Pago → ④ Mercado Pago avisa al servidor (webhook) → ⑤ pedido "Pagado" + alertas a la dueña → ⑥ ella compra a la distribuidora → ⑦ despacha → ⑧ aviso de envío a la compradora</div>'+
+ '<b>Riesgos de pago y cómo se cubren</b><table class="cfgt">'+risks.map(r=>'<tr><td><b>'+r[0]+'</b></td><td class="small">'+r[1]+'</td></tr>').join('')+'</table>'+
+ '<p class="small mut" style="margin-top:8px">Costos: hosting en Railway (unos USD 5/mes, a confirmar), dominio aparte y comisión de Mercado Pago por cobro. Sin abono de plataforma.</p>';
  $('#ovProd').classList.add('on')}
 function closeAll(){$$('.ov').forEach(o=>o.classList.remove('on'));$('#drawer').classList.remove('on')}
 $$('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeAll()}));
@@ -401,14 +422,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
 
 /* ---------- PEDIDOS ---------- */
 function renderOrders(){
- $('#ordN').textContent=S.orders.filter(o=>o.status!=='comprado').length;
- $('#otable').innerHTML=S.orders.map(o=>'<tr><td>#'+o.id+'</td><td><b>'+o.name+' '+o.last+'</b></td><td class="small">'+o.email+'<br>'+o.tel+'<br>'+o.addr+'<br><span class="badge">'+ZONES[o.zone][0].split(' ·')[0]+'</span></td><td class="small">'+o.items.map(i=>byId(i.id).n+' · talle '+i.size+' x'+i.qty).join('<br>')+'</td><td>'+fmt(o.items.reduce((a,i)=>a+price(byId(i.id))*i.qty,0)+ZONES[o.zone][1])+'</td><td><span class="badge '+(o.status==='comprado'?'ok':'warn')+'">'+(o.status==='comprado'?'Comprado':'Pagado · por comprar')+'</span></td></tr>').join('');
+ $('#ordN').textContent=S.orders.filter(o=>o.status!=='despachado').length;
+ $('#otable').innerHTML=S.orders.map(o=>'<tr><td>#'+o.id+'</td><td><b>'+o.name+' '+o.last+'</b></td><td class="small">'+o.email+'<br>'+o.tel+'<br>'+o.addr+'<br><span class="badge">'+ZONES[o.zone][0].split(' ·')[0]+'</span></td><td class="small">'+o.items.map(i=>byId(i.id).n+' · talle '+i.size+' x'+i.qty).join('<br>')+'</td><td>'+fmt(o.items.reduce((a,i)=>a+price(byId(i.id))*i.qty,0)+ZONES[o.zone][1])+'</td><td><span class="badge '+(o.status==='pagado'?'warn':'ok')+'">'+({pagado:'Pagado · por comprar',comprado:'Comprado · por despachar',despachado:'Despachado'})[o.status]+'</span>'+(o.trk?'<div class="small mut">'+o.trk+'</div>':'')+'</td><td>'+(o.status==='comprado'?'<input type="text" id="trk'+o.id+'" placeholder="Código de seguimiento" style="width:150px;margin-bottom:4px"><br><button class="btn pri sm" onclick="dispatch('+o.id+')">Marcar despachado</button>':'')+'</td></tr>').join('');
  const out=[];
- ['A','B'].forEach(k=>{const m={};S.orders.filter(o=>o.status!=='comprado'&&!(o.bought&&o.bought[k])).forEach(o=>o.items.forEach(i=>{if(byId(i.id).d===k){const key=i.id+'|'+i.size;m[key]=(m[key]||0)+i.qty}}));
+ ['A','B'].forEach(k=>{const m={};S.orders.filter(o=>o.status==='pagado'&&!(o.bought&&o.bought[k])).forEach(o=>o.items.forEach(i=>{if(byId(i.id).d===k){const key=i.id+'|'+i.size;m[key]=(m[key]||0)+i.qty}}));
   const keys=Object.keys(m),tot=keys.reduce((a,x)=>a+byId(+x.split('|')[0]).cost*m[x],0);
   out.push('<div class="card"><h3 style="font-size:20px">Lista de compra · '+DIST[k]+'</h3>'+(keys.length?'<table>'+keys.map(x=>{const p=byId(+x.split('|')[0]);return '<tr><td>'+p.n+'</td><td>'+x.split('|')[1]+'</td><td>x'+m[x]+'</td><td>'+fmt(p.cost*m[x])+'</td></tr>'}).join('')+'</table><div class="row" style="margin-top:10px"><b>Total: '+fmt(tot)+'</b><span class="sp"></span><button class="btn pri sm" onclick="buy(\''+k+'\')">Marcar como comprado</button></div>':'<p class="mut">Nada pendiente de comprar.</p>')+'</div>')});
- $('#groups').innerHTML=out.join('')}
-function buy(k){S.orders.forEach(o=>{o.bought=o.bought||{};if(o.items.some(i=>byId(i.id).d===k))o.bought[k]=true;if(o.items.every(i=>o.bought[byId(i.id).d]))o.status='comprado'});
+ $('#groups').innerHTML=out.join('');$('#alerts').innerHTML=S.alerts.length?S.alerts.map(a=>'<div>'+a.t+' · <b>'+a.to+'</b> <small>('+a.ch+')</small><br>'+a.msg+'</div>').join(''):'<p class="mut small">Todavía no hay alertas. Hacé una compra en la tienda para verlas.</p>'}
+function buy(k){S.orders.forEach(o=>{o.bought=o.bought||{};if(o.items.some(i=>byId(i.id).d===k))o.bought[k]=true;if(o.items.every(i=>o.bought[byId(i.id).d]))if(o.status==='pagado')o.status='comprado'});
  toast('Compra registrada en '+DIST[k]);renderOrders()}
 
 /* ---------- demo rápida ---------- */
