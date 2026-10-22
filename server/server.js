@@ -104,6 +104,7 @@ function createServer(cfgIn) {
 
   /* ---- 1) crear pedido: el precio sale de la lista del servidor ---- */
   async function checkout(req, res) {
+    if (!cfg.mpToken || !cfg.baseUrl || !cfg.frontUrl) return send(res, 503, { error: 'cobro no configurado' }, cors(req));
     let b; try { b = await readBody(req); } catch (e) { return send(res, 400, { error: 'pedido inválido' }); }
     const items = b.items;
     if (!Array.isArray(items) || !items.length || items.length > MAX_ITEMS) return send(res, 400, { error: 'items inválidos' });
@@ -207,7 +208,7 @@ function createServer(cfgIn) {
 
 if (require.main === module) {
   const cfg = loadConfig();
-  if (!cfg.mpToken || !cfg.baseUrl || !cfg.frontUrl) { console.error('Faltan variables: MP_ACCESS_TOKEN, BASE_URL, FRONT_URL'); process.exit(1); }
+  if (!cfg.mpToken || !cfg.baseUrl || !cfg.frontUrl) console.warn('AVISO: faltan variables (MP_ACCESS_TOKEN, BASE_URL, FRONT_URL). El servidor arranca, pero no cobra hasta que estén cargadas.');
   createServer(cfg).listen(cfg.port, () => console.log('Servidor de cobro escuchando en puerto', cfg.port));
 }
 module.exports = { createServer, loadConfig };
