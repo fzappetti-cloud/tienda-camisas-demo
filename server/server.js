@@ -25,6 +25,7 @@ function loadConfig(env = process.env) {
     mpApi: (env.MP_API || 'https://api.mercadopago.com').replace(/\/$/, ''),
     baseUrl: (env.BASE_URL || '').replace(/\/$/, ''),
     frontUrl: (env.FRONT_URL || '').replace(/\/$/, ''),
+    backUrl: (env.BACK_URL || '').replace(/\/$/, ''),
     webhookSecret: env.WEBHOOK_SECRET || '',
     adminToken: env.ADMIN_TOKEN || '',
     dataDir: env.DATA_DIR || path.join(__dirname, 'data'),
@@ -123,7 +124,7 @@ function createServer(cfgIn) {
       items: lines.map(l => ({ id: l.id, title: l.n + (l.size ? ' · talle ' + l.size : ''), quantity: l.qty, unit_price: l.unit, currency_id: 'ARS' })),
       external_reference: order.id,
       notification_url: cfg.baseUrl + '/webhook/mp',
-      back_urls: { success: cfg.frontUrl + '?pedido=' + order.id, failure: cfg.frontUrl + '?pedido=' + order.id, pending: cfg.frontUrl + '?pedido=' + order.id },
+      back_urls: { success: (cfg.backUrl || cfg.frontUrl) + '?pedido=' + order.id, failure: (cfg.backUrl || cfg.frontUrl) + '?pedido=' + order.id, pending: (cfg.backUrl || cfg.frontUrl) + '?pedido=' + order.id },
       auto_return: 'approved',
     };
     try {
@@ -154,7 +155,11 @@ function createServer(cfgIn) {
     const type = q.get('type') || q.get('topic') || body.type || body.topic;
     const dataId = q.get('data.id') || q.get('id') || (body.data && body.data.id) || body.id;
     if (type !== 'payment' || !dataId || !/^[A-Za-z0-9_-]{1,40}$/.test(String(dataId))) return send(res, 200, { ok: true, ignored: 'no_es_pago' });
-    if (!signatureOk(req, dataId)) { alert('seguridad', 'Aviso con firma inválida ignorado'); return send(res, 401, { error: 'firma inválida' }); }
+    if (!signatureOk(req, dataId)) {
+      const sig = String(req.headers['x-signature'] || '');
+      alert('seguridad', 'Aviso con firma inválida ignorado · diag: x-signature=' + (sig ? 'sí(' + sig.split(',').map(x => x.split('=')[0]).join('+') + ')' : 'no') + ', x-request-id=' + (req.headers['x-request-id'] ? 'sí' : 'no') + ', query=[' + [...q.keys()].join(',') + '], tipo=' + type + ', método=' + req.method);
+      return send(res, 401, { error: 'firma inválida' });
+    }
     try {
       const out = await processPayment(String(dataId));
       return send(res, 200, { ok: true, result: out });
