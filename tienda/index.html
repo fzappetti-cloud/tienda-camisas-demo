@@ -254,17 +254,73 @@ const byId=id=>P.find(p=>p.id===id);
 const hd=u=>u;const th=u=>u.replace('-1024-1024.','-480-0.');
 const imgT=(p,alt)=>'<img src="'+p.img+'" alt="'+(alt||p.n)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\''+th(p.img)+'\'">';
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2400)}
-function fresh(){return{step:1,view:'panel',dist:{A:true,B:true},cats:[],sizes:[],found:null,searching:false,picked:new Set(),imgs:{},mult:2,pub:[],cart:[],alerts:[],orders:[
+function fresh(){return{step:1,view:'panel',dist:{A:true,B:true},cats:[],sizes:[],found:null,searching:false,picked:new Set(),imgs:{},mult:2,pub:[],cart:[],alerts:[],form:newForm(),orders:[
  {id:1001,name:'María',last:'González',email:'maria@mail.com',tel:'351 555-0101',addr:'Obispo Trejo 450, Córdoba Capital',zone:'centro',items:[{id:14,size:'M',qty:1},{id:16,size:'L',qty:1}],status:'pagado',bought:{}},
  {id:1002,name:'Lucía',last:'Romero',email:'lucia@mail.com',tel:'3544 55-0202',addr:'San Martín 120, Villa Dolores',zone:'vd',items:[{id:17,size:'L',qty:2}],status:'pagado',bought:{}}]}}
 let S=fresh();
 const price=p=>Math.round(p.cost*S.mult/500)*500;
 const CATS=[...new Set(P.map(p=>p.cat))],ALLSZ=['S','M','L','XL','XXL','S/M','L/XL'];
+/* ---------- sumar prendas: otro mayorista por link / fotos propias ---------- */
+const BASEN=P.length,DISTH={};
+DIST.C='Prendas propias (fuera de catálogo)';
+['A','B'].forEach(k=>{const q=P.find(p=>p.d===k);try{DISTH[k]=new URL(q.url).hostname.replace(/^www\./,'')}catch(e){}});
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PH='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000"><rect width="800" height="1000" fill="#f4f2ee"/><text x="400" y="480" text-anchor="middle" font-family="sans-serif" font-size="34" fill="#9a8f86">Sin foto todavía</text><text x="400" y="530" text-anchor="middle" font-family="sans-serif" font-size="24" fill="#b3a99f">Subí una foto de la prenda</text></svg>');
+function newForm(){return{mode:null,link:'',src:'',n:'',cat:'',catNew:'',cost:'',sz:[],imgs:[]}}
+function dropExtras(){P.length=BASEN;Object.keys(DIST).forEach(k=>{if(!['A','B','C'].includes(k)){delete DIST[k];delete DISTH[k]}})}
+function setMode(m){S.form=Object.assign(newForm(),{mode:S.form.mode===m?null:m});render()}
+function fSz(z){const i=S.form.sz.indexOf(z);i<0?S.form.sz.push(z):S.form.sz.splice(i,1);render()}
+function slugName(u){const seg=u.pathname.split('/').filter(Boolean).pop()||'';const t=seg.replace(/[-_]+/g,' ').replace(/\b[a-z]{0,4}\d[\w]*\b/gi,'').replace(/\s+/g,' ').trim();return t?t.charAt(0).toUpperCase()+t.slice(1):''}
+function linkChanged(){try{const u=new URL(S.form.link.trim());if(!/^https?:$/.test(u.protocol))return;const h=u.hostname.replace(/^www\./,'');
+ if(!S.form.src){const k=Object.keys(DISTH).find(x=>DISTH[x]===h);S.form.src=k?DIST[k]:(h.split('.')[0].charAt(0).toUpperCase()+h.split('.')[0].slice(1))}
+ if(!S.form.n)S.form.n=slugName(u);render()}catch(e){}}
+function fFiles(files){
+ const left=4-S.form.imgs.length;if(left<=0){toast('Máximo 4 fotos por prenda');return}
+ const arr=[...files].filter(f=>/^image\//.test(f.type)&&f.size<15e6).slice(0,left);
+ if(!arr.length){toast('Elegí imágenes (JPG, PNG o WEBP) de hasta 15 MB');return}
+ let pend=arr.length;
+ arr.forEach(f=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,1024/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);S.form.imgs.push(c.toDataURL('image/jpeg',.86));if(--pend===0)render()};im.onerror=()=>{if(--pend===0)render()};im.src=r.result};r.onerror=()=>{if(--pend===0)render()};r.readAsDataURL(f)})}
+function fDel(i){S.form.imgs.splice(i,1);render()}
+function addCard(){
+ const f=S.form,m=f.mode;
+ let h='<div class="card" style="margin-top:14px"><div class="row"><b>➕ Sumar prendas que no salen en la búsqueda</b><span class="sp"></span><button class="btn sm '+(m==='link'?'pri':'')+'" onclick="setMode(\'link\')">🔗 De otro mayorista (link)</button><button class="btn sm '+(m==='own'?'pri':'')+'" onclick="setMode(\'own\')">📷 Prenda propia (mis fotos)</button></div>';
+ if(!m)return h+'<p class="small mut" style="margin:8px 0 0">Pegá el link de una prenda de otro mayorista, o subí fotos de tu computadora para promocionar prendas que no están en los catálogos.</p></div>';
+ const inp=(k,label,ph,type,extra)=>'<div><label class="l">'+label+'</label><input type="'+(type||'text')+'" value="'+esc(f[k])+'" placeholder="'+ph+'" oninput="S.form.'+k+'=this.value" '+(extra||'')+'></div>';
+ h+='<div class="g2" style="margin-top:10px">';
+ if(m==='link')h+=inp('link','Link de la prenda *','https://www.mayorista.com.ar/productos/…','text','onchange="linkChanged()"')+inp('src','Nombre del mayorista','Se completa solo con el link');
+ h+=inp('n','Nombre de la prenda *','Ej: Camisa de lino')+inp('cost','Precio de costo ($) *','Ej: 25000','number');
+ h+='<div><label class="l">Tipo de prenda</label><select onchange="S.form.cat=this.value;render()"><option value="">Elegí…</option>'+CATS.map(c=>'<option value="'+c+'" '+(f.cat===c?'selected':'')+'>'+c+'</option>').join('')+'<option value="__new" '+(f.cat==='__new'?'selected':'')+'>Otro tipo…</option></select>'+(f.cat==='__new'?'<input type="text" placeholder="Nombre del tipo" value="'+esc(f.catNew)+'" oninput="S.form.catNew=this.value" style="margin-top:6px">':'')+'</div>';
+ h+='<div><label class="l">Talles disponibles *</label><div class="row">'+ALLSZ.map(z=>'<span class="chip '+(f.sz.includes(z)?'on':'')+'" onclick="fSz(\''+z+'\')">'+z+'</span>').join('')+'</div></div></div>';
+ h+='<label class="l" style="margin-top:12px">'+(m==='own'?'Fotos desde tu computadora *':'Foto de la prenda')+' <span class="mut small">(hasta 4; la primera es la principal)</span></label><input type="file" accept="image/*" multiple onchange="fFiles(this.files);this.value=\'\'">';
+ if(f.imgs.length)h+='<div class="row" style="margin-top:8px">'+f.imgs.map((x,i)=>'<div style="position:relative"><img src="'+x+'" style="width:84px;height:105px;object-fit:cover;border-radius:8px;border:1px solid var(--line)" alt="Foto '+(i+1)+'"><button class="btn sm" style="position:absolute;top:2px;right:2px;padding:0 6px" onclick="fDel('+i+')" aria-label="Quitar">✕</button></div>').join('')+'</div>';
+ h+='<div class="note" style="margin-top:12px">'+(m==='own'?'Tus fotos pasan por el mismo paso 2 (fondo uniforme) que el resto. Al venderse, la prenda aparece en la lista de compra como "Prendas propias", para que anotes a qué proveedor se la pedís.':'Demo: en el sistema real la foto, el nombre y el precio se leen solos del link. Si el sitio no es compatible, se cargan a mano como acá. Usá solo mayoristas que te autoricen a usar sus fotos.')+'</div>';
+ h+='<div class="row" style="margin-top:12px"><button class="btn pri" onclick="submitItem()">Agregar a mi selección</button><button class="btn" onclick="setMode(\''+m+'\')">Cancelar</button></div></div>';
+ return h}
+function submitItem(){
+ const f=S.form,own=f.mode==='own',n=f.n.trim(),cost=+f.cost,cat=(f.cat==='__new'?f.catNew:f.cat).trim();
+ let err='',url='';
+ if(!own){try{const u=new URL(f.link.trim());if(!/^https?:$/.test(u.protocol))throw 0;url=u.href}catch(e){err='El link no es válido (tiene que empezar con https://)'}}
+ if(!err&&!n)err='Poné el nombre de la prenda';
+ if(!err&&!(cost>0))err='Poné el precio de costo';
+ if(!err&&!f.sz.length)err='Elegí al menos un talle';
+ if(!err&&own&&!f.imgs.length)err='Subí al menos una foto';
+ if(err){toast(err);return}
+ let d='C';
+ if(!own){const host=new URL(url).hostname.replace(/^www\./,'');d=Object.keys(DISTH).find(k=>DISTH[k]===host);
+  if(!d){d='W'+(Object.keys(DIST).length);DISTH[d]=host;DIST[d]=esc((f.src||host.split('.')[0]).trim())}}
+ S.dist[d]=true;
+ const p={id:Math.max(...P.map(x=>x.id))+1,n:esc(n),d,cost,img:f.imgs[0]||PH,imgs:f.imgs.slice(),sz:ALLSZ.filter(z=>f.sz.includes(z)),cat:esc(cat||'Otras prendas'),url:esc(url),custom:true};
+ P.push(p);if(!CATS.includes(p.cat))CATS.push(p.cat);
+ if(!S.found)S.found=P.filter(q=>S.dist[q.d]);else if(!S.found.includes(p))S.found.push(p);
+ S.picked.add(p.id);S.form=newForm();render();toast('Prenda agregada y elegida ✓')}
+const gimg=(p,i)=>p.imgs&&p.imgs.length>1&&p.imgs[i]?'<img src="'+p.imgs[i]+'" alt="'+p.n+'">':pimg(p,i);
+const gN=p=>p.imgs&&p.imgs.length>1?Math.min(4,p.imgs.length):3;
+
 
 /* ---------- navegación ---------- */
 function show(v){S.view=v;$$('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));window.scrollTo(0,0);render()}
 $('#nav').onclick=e=>{const b=e.target.closest('button');if(b)show(b.dataset.v)};
-$('#reset').onclick=()=>{S=fresh();closeAll();show('panel');toast('Demo reiniciada')};
+$('#reset').onclick=()=>{dropExtras();S=fresh();closeAll();show('panel');toast('Demo reiniciada')};
 
 /* ---------- PANEL ---------- */
 const STEPN=['Buscar','Crear imágenes','Precios','Publicar'],STEPD=['Elegís distribuidora, tipo de prenda y talles','Fondo uniforme y formato de tienda','Margen sobre el costo','Se carga en tu tienda'];
@@ -277,10 +333,11 @@ function renderPanel(){
 }
 function step1(){
  const chips=(arr,sel,fn)=>arr.map(x=>'<span class="chip '+(sel.includes(x)?'on':'')+'" onclick="'+fn+'(\''+x.replace(/'/g,"\\'")+'\')">'+x+'</span>').join('');
- let h='<div class="card"><div class="g2"><div><b>Distribuidoras</b><div class="row" style="margin-top:6px">'+['A','B'].map(k=>'<span class="chip '+(S.dist[k]?'on':'')+'" onclick="togDist(\''+k+'\')">'+DIST[k]+'</span>').join('')+'</div>'+
+ let h='<div class="card"><div class="g2"><div><b>Distribuidoras</b><div class="row" style="margin-top:6px">'+Object.keys(DIST).filter(k=>k in S.dist).map(k=>'<span class="chip '+(S.dist[k]?'on':'')+'" onclick="togDist(\''+k+'\')">'+DIST[k]+'</span>').join('')+'</div>'+
   '<p style="margin:14px 0 6px"><b>Tipo de prenda</b> <span class="small mut">(si no marcás ninguno, trae todos)</span></p><div class="row">'+chips(CATS,S.cats,'togCat')+'</div></div>'+
   '<div><b>Talles que ofrecés</b> <span class="small mut">(solo trae prendas con esos talles disponibles)</span><div class="row" style="margin-top:6px">'+chips(ALLSZ,S.sizes,'togSz')+'</div></div></div>'+
   '<div class="row" style="margin-top:16px"><button class="btn pri" onclick="doSearch()" '+(S.searching?'disabled':'')+'>🔎 Buscar en las distribuidoras</button><span class="small mut">Demo: la búsqueda real lee el catálogo público de cada distribuidora una vez al día.</span></div></div>';
+ h+=addCard();
  if(S.searching)h+='<div class="card" style="margin-top:14px;text-align:center"><div class="spin"></div><p class="mut">Buscando y comparando talles disponibles…</p></div>';
  else if(S.found){
   h+='<div class="row" style="margin:16px 0 10px"><b>'+S.found.length+' prendas encontradas</b><span class="mut small">Tocá las que querés en tu tienda</span><span class="sp"></span><button class="btn sm" onclick="pickAll()">Elegir todas</button><button class="btn sm" onclick="S.picked.clear();render()">Quitar</button></div>';
@@ -292,7 +349,7 @@ function togDist(k){S.dist[k]=!S.dist[k];S.found=null;render()}
 function togCat(c){const i=S.cats.indexOf(c);i<0?S.cats.push(c):S.cats.splice(i,1);S.found=null;render()}
 function togSz(z){const i=S.sizes.indexOf(z);i<0?S.sizes.push(z):S.sizes.splice(i,1);S.found=null;render()}
 function doSearch(){
- if(!S.dist.A&&!S.dist.B){toast('Elegí al menos una distribuidora');return}
+ if(!Object.values(S.dist).some(Boolean)){toast('Elegí al menos una distribuidora');return}
  S.searching=true;render();
  setTimeout(()=>{S.searching=false;S.found=P.filter(p=>S.dist[p.d]&&(!S.cats.length||S.cats.includes(p.cat))&&(!S.sizes.length||p.sz.some(z=>S.sizes.includes(z)||z.split('/').some(x=>S.sizes.includes(x)))));
   S.picked=new Set([...S.picked].filter(id=>S.found.some(p=>p.id===id)));render();toast(S.found.length+' prendas encontradas')},1100)}
@@ -373,7 +430,7 @@ function pCat(b,list,cats){
  '<div class="catlay"><aside class="fside"><h4>Categorías</h4><a class="'+(R.cat==='Todas'?'on':'')+'" onclick="go(\'cat\',\'Todas\')">Todas</a>'+cats.map(c=>'<a class="'+(R.cat===c?'on':'')+'" onclick="go(\'cat\',\''+c+'\')">'+c+'</a>').join('')+'<h4>Talle</h4>'+szs.map(z=>'<label><input type="checkbox" '+(R.size===z?'checked':'')+' onchange="R.size=this.checked?\''+z+'\':\'\';renderShop()"> '+z+'</label>').join('')+'</aside><div>'+(items.length?'<div class="tgrid" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+items.map(p=>card(p)).join('')+'</div>':'<div class="empty">No hay prendas con esos filtros.</div>')+'</div></div>'}
 function pProd(b,list){
  const p=byId(R.pid),rel=list.filter(x=>x.cat===p.cat&&x.id!==p.id).slice(0,4);
- b.innerHTML='<div class="crumbs"><a onclick="go(\'home\')">Inicio</a> / <a onclick="go(\'cat\',\''+p.cat+'\')">'+p.cat+'</a> / '+p.n+'</div><div class="prodlay"><div class="gal"><div class="th">'+[0,1,2].map(i=>'<div class="'+(R.gi===i?'on':'')+'" onclick="R.gi='+i+';renderShop()">'+pimg(p,i)+'</div>').join('')+'</div><div class="mainimg">'+pimg(p,R.gi)+'</div></div>'+
+ b.innerHTML='<div class="crumbs"><a onclick="go(\'home\')">Inicio</a> / <a onclick="go(\'cat\',\''+p.cat+'\')">'+p.cat+'</a> / '+p.n+'</div><div class="prodlay"><div class="gal"><div class="th">'+[...Array(gN(p)).keys()].map(i=>'<div class="'+(R.gi===i?'on':'')+'" onclick="R.gi='+i+';renderShop()">'+gimg(p,i)+'</div>').join('')+'</div><div class="mainimg">'+gimg(p,R.gi)+'</div></div>'+
  '<div class="pinfo"><h1>'+p.n+'</h1><div class="p1">'+fmt(price(p))+'</div><div class="cu2">3 cuotas de '+fmt(price(p)/3)+' sin interés</div>'+
  '<div class="lb">Talle</div><div class="tsz">'+p.sz.map(z=>{const s=stk(p,z);return '<span class="'+(R.psize===z?'on':'')+'" onclick="R.psize=\''+z+'\';renderShop()">'+z+(s<=2?'<br><small style="color:var(--warn)">Quedan '+s+'</small>':'')+'</span>'}).join('')+'</div>'+
  '<div class="qrow"><div class="qty"><button onclick="R.pqty=Math.max(1,R.pqty-1);renderShop()">−</button><b>'+R.pqty+'</b><button onclick="R.pqty++;renderShop()">+</button></div><button class="addb" onclick="addCart()">Agregar al carrito</button></div><button class="wab" onclick="waProd()">💬 Consultar por WhatsApp</button>'+
@@ -457,7 +514,7 @@ function renderOrders(){
  $('#ordN').textContent=S.orders.filter(o=>o.status!=='despachado').length;
  $('#otable').innerHTML=S.orders.map(o=>'<tr><td>#'+o.id+'</td><td><b>'+o.name+' '+o.last+'</b></td><td class="small">'+o.email+'<br>'+o.tel+'<br>'+o.addr+'<br><span class="badge">'+ZONES[o.zone][0].split(' ·')[0]+'</span></td><td class="small">'+o.items.map(i=>byId(i.id).n+' · talle '+i.size+' x'+i.qty).join('<br>')+'</td><td>'+fmt(o.items.reduce((a,i)=>a+price(byId(i.id))*i.qty,0)+ZONES[o.zone][1])+'</td><td><span class="badge '+(o.status==='pagado'?'warn':'ok')+'">'+({pagado:'Pagado · por comprar',comprado:'Comprado · por despachar',despachado:'Despachado'})[o.status]+'</span>'+(o.trk?'<div class="small mut">'+o.trk+'</div>':'')+'</td><td>'+(o.status==='comprado'?'<input type="text" id="trk'+o.id+'" placeholder="Código de seguimiento" style="width:150px;margin-bottom:4px"><br><button class="btn pri sm" onclick="dispatch('+o.id+')">Marcar despachado</button>':'')+'</td></tr>').join('');
  const out=[];
- ['A','B'].forEach(k=>{const m={};S.orders.filter(o=>o.status==='pagado'&&!(o.bought&&o.bought[k])).forEach(o=>o.items.forEach(i=>{if(byId(i.id).d===k){const key=i.id+'|'+i.size;m[key]=(m[key]||0)+i.qty}}));
+ Object.keys(DIST).filter(k=>k==='A'||k==='B'||S.orders.some(o=>o.items.some(i=>byId(i.id).d===k))).forEach(k=>{const m={};S.orders.filter(o=>o.status==='pagado'&&!(o.bought&&o.bought[k])).forEach(o=>o.items.forEach(i=>{if(byId(i.id).d===k){const key=i.id+'|'+i.size;m[key]=(m[key]||0)+i.qty}}));
   const keys=Object.keys(m),tot=keys.reduce((a,x)=>a+byId(+x.split('|')[0]).cost*m[x],0);
   out.push('<div class="card"><h3 style="font-size:20px">Lista de compra · '+DIST[k]+'</h3>'+(keys.length?'<table>'+keys.map(x=>{const p=byId(+x.split('|')[0]);return '<tr><td>'+p.n+'</td><td>'+x.split('|')[1]+'</td><td>x'+m[x]+'</td><td>'+fmt(p.cost*m[x])+'</td></tr>'}).join('')+'</table><div class="row" style="margin-top:10px"><b>Total: '+fmt(tot)+'</b><span class="sp"></span><button class="btn pri sm" onclick="buy(\''+k+'\')">Marcar como comprado</button></div>':'<p class="mut">Nada pendiente de comprar.</p>')+'</div>')});
  $('#groups').innerHTML=out.join('');$('#alerts').innerHTML=S.alerts.length?S.alerts.map(a=>'<div>'+a.t+' · <b>'+a.to+'</b> <small>('+a.ch+')</small><br>'+a.msg+'</div>').join(''):'<p class="mut small">Todavía no hay alertas. Hacé una compra en la tienda para verlas.</p>'}
@@ -465,7 +522,7 @@ function buy(k){S.orders.forEach(o=>{o.bought=o.bought||{};if(o.items.some(i=>by
  toast('Compra registrada en '+DIST[k]);renderOrders()}
 
 /* ---------- demo rápida ---------- */
-$('#quick').onclick=()=>{S=fresh();S.cats=[];S.found=P.slice();[14,16,17,18,19,2,3,4,9,1,5,12].forEach(id=>{S.picked.add(id);S.imgs[id]='ok'});S.priceSeen=true;S.pub=[...S.picked];S.step=4;closeAll();show('shop');toast('Demo cargada: tienda con 12 prendas. Probá comprar una.')};
+$('#quick').onclick=()=>{dropExtras();S=fresh();S.cats=[];S.found=P.slice();[14,16,17,18,19,2,3,4,9,1,5,12].forEach(id=>{S.picked.add(id);S.imgs[id]='ok'});S.priceSeen=true;S.pub=[...S.picked];S.step=4;closeAll();show('shop');toast('Demo cargada: tienda con 12 prendas. Probá comprar una.')};
 
 function render(){renderPanel();renderShop();renderOrders()}
 render();
