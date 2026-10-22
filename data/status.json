@@ -1,9 +1,9 @@
 {
-  "run": "2026-10-21T11:00:13.548Z",
+  "run": "2026-10-22T10:58:59.138Z",
   "stores": {
     "A": {
       "ok": true,
-      "count": 781,
+      "count": 786,
       "sinTalleElegido": 0,
       "talles": [],
       "requests": 115,
@@ -23,13 +23,13 @@
         {
           "category": "Blusas",
           "path": "/camisolas/",
-          "count": 85,
+          "count": 88,
           "capped": false
         },
         {
           "category": "Camisas",
           "path": "/camisas/",
-          "count": 174,
+          "count": 178,
           "capped": false
         },
         {
@@ -47,7 +47,7 @@
         {
           "category": "Remeras y tops",
           "path": "/remeras/",
-          "count": 218,
+          "count": 219,
           "capped": false
         },
         {
@@ -110,27 +110,27 @@
     },
     "B": {
       "ok": true,
-      "count": 919,
+      "count": 931,
       "sinTalleElegido": 0,
       "talles": [],
-      "requests": 107,
+      "requests": 108,
       "categories": [
         {
           "category": "Remeras y musculosas",
           "path": "/remeras1/",
-          "count": 392,
+          "count": 397,
           "capped": false
         },
         {
           "category": "Camisas y blusas",
           "path": "/camisas-y-blusas/",
-          "count": 269,
+          "count": 275,
           "capped": false
         },
         {
           "category": "Vestidos importados",
           "path": "/vestidos/",
-          "count": 134,
+          "count": 135,
           "capped": false
         },
         {
