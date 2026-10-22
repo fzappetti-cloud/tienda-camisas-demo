@@ -266,7 +266,7 @@ DIST.C='Prendas propias (fuera de catálogo)';
 ['A','B'].forEach(k=>{const q=P.find(p=>p.d===k);try{DISTH[k]=new URL(q.url).hostname.replace(/^www\./,'')}catch(e){}});
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const PH='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000"><rect width="800" height="1000" fill="#f4f2ee"/><text x="400" y="480" text-anchor="middle" font-family="sans-serif" font-size="34" fill="#9a8f86">Sin foto todavía</text><text x="400" y="530" text-anchor="middle" font-family="sans-serif" font-size="24" fill="#b3a99f">Subí una foto de la prenda</text></svg>');
-function newForm(){return{mode:null,link:'',src:'',n:'',cat:'',catNew:'',cost:'',sz:[],imgs:[]}}
+function newForm(){return{imp:null,mode:null,link:'',src:'',n:'',cat:'',catNew:'',cost:'',sz:[],imgs:[]}}
 function dropExtras(){P.length=BASEN;Object.keys(DIST).forEach(k=>{if(!['A','B','C'].includes(k)){delete DIST[k];delete DISTH[k]}})}
 function setMode(m){S.form=Object.assign(newForm(),{mode:S.form.mode===m?null:m});render()}
 function fSz(z){const i=S.form.sz.indexOf(z);i<0?S.form.sz.push(z):S.form.sz.splice(i,1);render()}
@@ -283,8 +283,9 @@ function fFiles(files){
 function fDel(i){S.form.imgs.splice(i,1);render()}
 function addCard(){
  const f=S.form,m=f.mode;
- let h='<div class="card" style="margin-top:14px"><div class="row"><b>➕ Sumar prendas que no salen en la búsqueda</b><span class="sp"></span><button class="btn sm '+(m==='link'?'pri':'')+'" onclick="setMode(\'link\')">🔗 De otro mayorista (link)</button><button class="btn sm '+(m==='own'?'pri':'')+'" onclick="setMode(\'own\')">📷 Prenda propia (mis fotos)</button></div>';
- if(!m)return h+'<p class="small mut" style="margin:8px 0 0">Pegá el link de una prenda de otro mayorista, o subí fotos de tu computadora para promocionar prendas que no están en los catálogos.</p></div>';
+ let h='<div class="card" style="margin-top:14px"><div class="row"><b>➕ Sumar prendas que no salen en la búsqueda</b><span class="sp"></span><button class="btn sm '+(m==='link'?'pri':'')+'" onclick="setMode(\'link\')">🔗 De otro mayorista (link)</button><button class="btn sm '+(m==='own'?'pri':'')+'" onclick="setMode(\'own\')">📷 Prenda propia (mis fotos)</button><button class="btn sm '+(m==='import'?'pri':'')+'" onclick="setMode(\'import\')">🌐 Importar catálogo (link de la tienda)</button></div>';
+ if(!m)return h+'<p class="small mut" style="margin:8px 0 0">Pegá el link de una prenda de otro mayorista, subí fotos de tu computadora, o pegá el link de la tienda de un mayorista para traer todo su catálogo como las dos distribuidoras de siempre.</p></div>';
+ if(m==='import')return h+importForm();
  const inp=(k,label,ph,type,extra)=>'<div><label class="l">'+label+'</label><input type="'+(type||'text')+'" value="'+esc(f[k])+'" placeholder="'+ph+'" oninput="S.form.'+k+'=this.value" '+(extra||'')+'></div>';
  h+='<div class="g2" style="margin-top:10px">';
  if(m==='link')h+=inp('link','Link de la prenda *','https://www.mayorista.com.ar/productos/…','text','onchange="linkChanged()"')+inp('src','Nombre del mayorista','Se completa solo con el link');
@@ -296,6 +297,32 @@ function addCard(){
  h+='<div class="note" style="margin-top:12px">'+(m==='own'?'Tus fotos pasan por el mismo paso 2 (fondo uniforme) que el resto. Al venderse, la prenda aparece en la lista de compra como "Prendas propias", para que anotes a qué proveedor se la pedís.':'Demo: en el sistema real la foto, el nombre y el precio se leen solos del link. Si el sitio no es compatible, se cargan a mano como acá. Usá solo mayoristas que te autoricen a usar sus fotos.')+'</div>';
  h+='<div class="row" style="margin-top:12px"><button class="btn pri" onclick="submitItem()">Agregar a mi selección</button><button class="btn" onclick="setMode(\''+m+'\')">Cancelar</button></div></div>';
  return h}
+function importForm(){
+ const f=S.form,im=f.imp||{steps:[],res:null,busy:false};
+ let h='<div class="g2" style="margin-top:10px"><div><label class="l">Link de la tienda del mayorista *</label><input type="text" value="'+esc(f.link)+'" placeholder="https://www.mayorista.com.ar" oninput="S.form.link=this.value"></div><div><label class="l">Nombre del mayorista (opcional)</label><input type="text" value="'+esc(f.src)+'" placeholder="Si lo dejás vacío se toma del sitio" oninput="S.form.src=this.value"></div></div>';
+ h+='<div class="row" style="margin-top:12px"><button class="btn pri" '+(im.busy?'disabled':'')+' onclick="runImport()">🔎 Revisar la tienda y traer su catálogo</button></div>';
+ if(im.steps.length||im.res)h+='<div class="small" style="margin-top:10px">'+im.steps.map(t=>'<div>✅ '+t+'</div>').join('')+(im.busy?'<div class="spin" style="margin:8px 0;width:22px;height:22px"></div>':'')+'</div>';
+ if(im.res)h+='<div class="note" id="impres" style="margin-top:10px;'+(im.res.ok?'background:#e8f6ee;border-color:#bfe3cd;color:#1d5a3b':'')+'">'+im.res.msg+'</div>';
+ h+='<div class="note" style="margin-top:12px"><b>Cómo funciona de verdad:</b> el sistema abre la portada de esa tienda, detecta sus categorías, prueba leer productos con sus talles disponibles y, si es compatible, la suma como una distribuidora más. Desde ahí se actualiza solo una vez por día, igual que Vintage BSAS y Rumba Helguera. Si el sitio no es compatible, se cargan las prendas a mano con la opción 🔗. Usá solo mayoristas que te autoricen a usar sus fotos.<br><b>Esta demo simula el resultado</b> (no entra a la tienda): si el link termina en .com.ar o es de Tiendanube, lo da como compatible y trae 6 prendas de ejemplo.</div>';
+ return h+'</div>'}
+function runImport(){
+ const f=S.form;let u;
+ try{u=new URL(f.link.trim());if(u.protocol!=='https:')throw 0}catch(e){toast('Pegá el link de la tienda (tiene que empezar con https://)');return}
+ const host=u.hostname.replace(/^www\./,'');
+ if(!host.includes('.')||/^[\d.]+$/.test(host)||host==='localhost'){toast('Ese link no apunta a una tienda pública');return}
+ const known=Object.keys(DISTH).find(k=>DISTH[k]===host);
+ if(known){f.imp={steps:[],busy:false,res:{ok:false,msg:'Esa tienda ya está cargada: <b>'+DIST[known]+'</b>.'}};render();return}
+ f.imp={steps:[],busy:true,res:null};render();
+ ['Abrí la portada (máximo 20 segundos por pedido y hasta 2 reintentos)','Detecté las categorías del menú','Probé leer productos y talles disponibles'].forEach((t,i)=>setTimeout(()=>{if(S.form!==f)return;f.imp.steps.push(t);render()},(i+1)*700));
+ setTimeout(()=>{if(S.form!==f)return;
+  const ok=/\.com\.ar$|mitiendanube\.com$|tiendanube\.com$/.test(host);
+  if(!ok){f.imp={steps:f.imp.steps,busy:false,res:{ok:false,msg:'❌ <b>Tienda no compatible.</b> No publica sus productos en un formato que el sistema pueda leer. No se trajo nada: podés cargar sus prendas a mano con la opción 🔗 De otro mayorista.'}};render();return}
+  const d='W'+Object.keys(DIST).length;DISTH[d]=host;DIST[d]=esc((f.src||host.split('.')[0]).trim().replace(/^./,c=>c.toUpperCase()));S.dist[d]=true;
+  let id=Math.max(...P.map(x=>x.id))+1;
+  [0,3,6,9,12,15].forEach(i=>{const q=P[i%BASEN];P.push({...q,id:id++,n:'Ejemplo: '+q.n,d,cost:Math.round(q.cost*.9/500)*500,url:'',demo:true,custom:true})});
+  S.found=P.filter(q=>S.dist[q.d]);
+  f.imp={steps:f.imp.steps,busy:false,res:{ok:true,msg:'✅ <b>Compatible.</b> Encontré 4 categorías y leí 7 prendas: 6 con talles disponibles (ya están abajo, para que elijas) y 1 sin stock, que se omite. <b>Son prendas de EJEMPLO de la simulación.</b>'}};
+  render();toast('Mayorista sumado: '+DIST[d])},2900)}
 function submitItem(){
  const f=S.form,own=f.mode==='own',n=f.n.trim(),cost=+f.cost,cat=(f.cat==='__new'?f.catNew:f.cat).trim();
  let err='',url='';
@@ -341,7 +368,7 @@ function step1(){
  if(S.searching)h+='<div class="card" style="margin-top:14px;text-align:center"><div class="spin"></div><p class="mut">Buscando y comparando talles disponibles…</p></div>';
  else if(S.found){
   h+='<div class="row" style="margin:16px 0 10px"><b>'+S.found.length+' prendas encontradas</b><span class="mut small">Tocá las que querés en tu tienda</span><span class="sp"></span><button class="btn sm" onclick="pickAll()">Elegir todas</button><button class="btn sm" onclick="S.picked.clear();render()">Quitar</button></div>';
-  h+=S.found.length?'<div class="pgrid">'+S.found.map(p=>'<div class="pc '+(S.picked.has(p.id)?'sel':'')+'" onclick="togPick('+p.id+')"><div class="ck">'+(S.picked.has(p.id)?'✓':'')+'</div><div class="im">'+imgT(p)+'</div><div class="tx"><b>'+p.n+'</b><span class="mut">'+DIST[p.d]+' · '+fmt(p.cost)+'</span><div class="small mut">Talles: '+p.sz.join(', ')+'</div></div></div>').join('')+'</div>':'<div class="empty">No hay prendas con esos filtros. Probá con menos talles o más tipos de prenda.</div>';
+  h+=S.found.length?'<div class="pgrid">'+S.found.map(p=>'<div class="pc '+(S.picked.has(p.id)?'sel':'')+'" onclick="togPick('+p.id+')"><div class="ck">'+(S.picked.has(p.id)?'✓':'')+'</div><div class="im">'+imgT(p)+'</div><div class="tx"><b>'+p.n+'</b><span class="mut">'+DIST[p.d]+' · '+fmt(p.cost)+(p.demo?' · <b style="color:var(--warn)">EJEMPLO</b>':'')+'</span><div class="small mut">Talles: '+p.sz.join(', ')+'</div></div></div>').join('')+'</div>':'<div class="empty">No hay prendas con esos filtros. Probá con menos talles o más tipos de prenda.</div>';
   h+='<div class="row" style="margin-top:16px"><span class="mut">'+S.picked.size+' elegidas</span><span class="sp"></span><button class="btn pri" '+(S.picked.size?'':'disabled')+' onclick="goStep(2)">Siguiente: crear imágenes →</button></div>';
  }
  return h}

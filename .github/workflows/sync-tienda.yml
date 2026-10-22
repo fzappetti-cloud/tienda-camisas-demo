@@ -1,0 +1,34 @@
+name: 3 · Sumar un mayorista por link
+on:
+  workflow_dispatch:       # "Run workflow" = revisar la tienda y sumarla si es compatible
+    inputs:
+      enlace:
+        description: 'Link de la portada de la tienda del mayorista (https://...)'
+        required: true
+      nombre:
+        description: 'Nombre del mayorista (opcional; si lo dejás vacío se usa el del sitio)'
+        required: false
+        default: ''
+permissions:
+  contents: write
+concurrency:
+  group: sync-tienda
+  cancel-in-progress: false
+jobs:
+  sumar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      # Los datos entran por variables de entorno (nunca pegados dentro del comando) para evitar inyección.
+      - run: node scraper/sync.js tienda "$ENLACE" "$NOMBRE"
+        env:
+          ENLACE: ${{ inputs.enlace }}
+          NOMBRE: ${{ inputs.nombre }}
+      - name: Guardar cambios
+        run: |
+          git config user.name "catalogo-bot"; git config user.email "bot@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || (git commit -m "Mayorista sumado" && git pull --rebase && git push)

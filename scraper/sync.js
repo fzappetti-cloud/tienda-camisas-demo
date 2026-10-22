@@ -9,6 +9,11 @@ const STORES = {
   A: { name: 'Vintage BSAS', origin: 'https://www.vintagebsas.com.ar' },
   B: { name: 'Rumba Helguera', origin: 'https://www.rumbahelguera.com.ar' },
 };
+// Mayoristas sumados por la clienta con el flujo "3 · Sumar un mayorista" (data/extra-stores.json). Se agregan a los dos fijos.
+const EXTRA_FILE = path.join(__dirname, '..', 'data', 'extra-stores.json');
+const MAX_EXTRA = 8;
+function loadExtra() { try { const a = JSON.parse(fs.readFileSync(EXTRA_FILE, 'utf8')); return Array.isArray(a) ? a.filter(e => e && /^X[1-8]$/.test(e.key) && e.name && /^https:\/\//.test(e.origin)) : []; } catch { return []; } }
+for (const e of loadExtra()) STORES[e.key] = { name: e.name, origin: e.origin };
 const LIMITS = {
   timeoutMs: 20000,      // por pedido
   retries: 2,            // reintentos extra por pedido
@@ -121,6 +126,34 @@ function discoverCategories(html) {
   return [...cats].map(([p, name]) => ({ path: p, name }));
 }
 
+// Seguridad: solo sitios públicos por https (nada de direcciones internas, IP sueltas ni puertos raros).
+function checkPublicHttps(raw) {
+  let u; try { u = new URL(String(raw || '').trim()); } catch { throw new Error('el enlace no es válido'); }
+  const h = u.hostname.toLowerCase();
+  if (u.protocol !== 'https:') throw new Error('el enlace tiene que empezar con https://');
+  if (u.username || u.password) throw new Error('el enlace no puede traer usuario ni clave');
+  if (u.port && u.port !== '443') throw new Error('puerto no permitido');
+  if (!h.includes('.') || /^[\d.]+$/.test(h) || h.includes(':') || h === 'localhost' || /\.(local|internal|localhost|lan|test)$/.test(h)) throw new Error('el enlace no apunta a una tienda pública');
+  return u.origin;
+}
+// Prueba si una tienda es "compatible": tiene categorías en el menú y publica productos con datos estructurados (JSON-LD).
+async function probeStore(origin, get) {
+  const home = await get(origin + '/');
+  if (home.status !== 200) throw new Error('la portada no está disponible');
+  const cats = discoverCategories(home.html);
+  if (!cats.length) throw new Error('no se encontraron categorías en el menú de la tienda');
+  for (const c of cats.slice(0, 3)) {                     // con probar 3 categorías alcanza: máximo 4 pedidos en total
+    const r = await get(origin + c.path);
+    if (r.status !== 200) continue;
+    const list = parseProducts(r.html, origin + c.path);
+    if (list.length) return { categories: cats, probe: c.name, sampleCount: list.length, withSizes: list.filter(p => p.sz && p.sz.length).length, sample: list.slice(0, 3).map(p => ({ name: p.name, price: p.price, sz: p.sz || null })) };
+  }
+  throw new Error('no se pudieron leer productos: el sitio no publica datos compatibles (se cargan a mano)');
+}
+function cleanStoreName(n, host) {
+  const t = String(n || '').replace(/<[^>]*>/g, '').replace(/[^\p{L}\p{N} .&'-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  return t || titleCase(host.replace(/^www\./, '').split('.')[0]);
+}
 function makeFetcher(budget) {
   return async function get(url) {
     let lastErr;
@@ -269,8 +302,26 @@ async function main() {
     if (r.status !== 200) throw new Error('producto no disponible');
     console.log(JSON.stringify(parseProductPage(r.html, u.origin + u.pathname), null, 1)); process.exit(0);
   }
-  if (mode !== 'categorias' && mode !== 'catalogo') { console.log('Uso: node scraper/sync.js categorias | catalogo'); process.exit(2); }
+  if (mode === 'tienda') {   // node scraper/sync.js tienda <enlace de la tienda> [nombre]: suma un mayorista nuevo (máx. 4 pedidos)
+    const origin = checkPublicHttps(process.argv[3]);
+    const host = new URL(origin).hostname.replace(/^www\./, '');
+    const extra = loadExtra();
+    if (Object.values(STORES).some(s => new URL(s.origin).hostname.replace(/^www\./, '') === host)) throw new Error('esa tienda ya está cargada');
+    if (extra.length >= MAX_EXTRA) throw new Error('se alcanzó el máximo de mayoristas sumados (' + MAX_EXTRA + ')');
+    const key = ['X1','X2','X3','X4','X5','X6','X7','X8'].find(k => !extra.some(e => e.key === k));
+    const name = cleanStoreName(process.argv[4], host);
+    const get = makeFetcher({ requests: 0, deadline: Date.now() + 90000 });
+    const p = await probeStore(origin, get);
+    extra.push({ key, name, origin, added: new Date().toISOString() });
+    fs.writeFileSync(EXTRA_FILE, JSON.stringify(extra, null, 2));
+    const prev = readJson(CATS, { stores: {} });
+    prev.stores = { ...(prev.stores || {}), [key]: { name, categories: p.categories } };
+    prev.updated = new Date().toISOString();
+    fs.writeFileSync(CATS, JSON.stringify(prev));
+    console.log(JSON.stringify({ paso: 'tienda', ok: true, key, name, origin, categorias: p.categories.length, probada: p.probe, leidas: p.sampleCount, conTalles: p.withSizes, muestra: p.sample }, null, 1)); process.exit(0);
+  }
+  if (mode !== 'categorias' && mode !== 'catalogo') { console.log('Uso: node scraper/sync.js categorias | catalogo | tienda <enlace> [nombre] | producto <enlace>'); process.exit(2); }
   const ok = mode === 'categorias' ? await runCategories() : await runCatalog();
   process.exit(ok ? 0 : 1);
 }
-if (require.main === module) main(); else module.exports = { parseProductPage, applySizes, parseSizes, parseProducts, discoverCategories, crawlStore, validateSelection, LIMITS };
+if (require.main === module) main(); else module.exports = { checkPublicHttps, probeStore, cleanStoreName, parseProductPage, applySizes, parseSizes, parseProducts, discoverCategories, crawlStore, validateSelection, LIMITS };
