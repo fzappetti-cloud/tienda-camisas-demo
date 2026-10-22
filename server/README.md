@@ -2,6 +2,12 @@
 
 Sirve para **medir el trabajo real de los pagos** antes de cerrar el precio. No tiene dependencias y corre solo cuando hay una compra.
 
+## Estado del despliegue (22/10/2026)
+- Publicado en Railway: proyecto `adriana-shop-cobro-prueba`, servicio `cobro`, dirección `https://cobro-production-257f.up.railway.app`.
+- Ya cargadas: `BASE_URL`, `FRONT_URL`, `ADMIN_TOKEN` (generada; se lee en el panel de Railway, Variables) y `DATA_DIR`.
+- **Falta: `MP_ACCESS_TOKEN`** (y `WEBHOOK_SECRET`). Sin la clave de Mercado Pago, `/health` responde bien y `/api/checkout` responde 503 "cobro no configurado".
+- Reinicio automático limitado a 3 intentos si falla (sin bucles).
+
 ## 1. Prueba local con Mercado Pago falso (sin cuentas, sin dinero)
 ```
 node server/test.js
