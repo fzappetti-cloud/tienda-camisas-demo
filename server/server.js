@@ -149,6 +149,22 @@ function createServer(cfgIn) {
     const h = crypto.createHmac('sha256', cfg.webhookSecret).update(manifest).digest('hex');
     return safeEq(h, v1);
   }
+  function sigVariants(req, dataId, body) {
+    if (!cfg.webhookSecret) return 'sin_clave';
+    const sig = String(req.headers['x-signature'] || ''), rid = String(req.headers['x-request-id'] || '');
+    const ts = (sig.match(/ts=([^,]+)/) || [])[1], v1 = (sig.match(/v1=([a-f0-9]+)/) || [])[1];
+    if (!ts || !v1) return 'sin_ts_v1';
+    const ids = { query: String(dataId), query_min: String(dataId).toLowerCase(), cuerpo_data: String((body && body.data && body.data.id) || ''), cuerpo_id: String((body && body.id) || '') };
+    const hit = [];
+    for (const [n, id] of Object.entries(ids)) {
+      if (!id) continue;
+      for (const [m, man] of Object.entries({ completo: `id:${id};request-id:${rid};ts:${ts};`, sin_rid: `id:${id};ts:${ts};` })) {
+        const h = crypto.createHmac('sha256', cfg.webhookSecret).update(man).digest('hex');
+        if (safeEq(h, v1)) hit.push(n + '/' + m);
+      }
+    }
+    return hit.length ? 'COINCIDE:' + hit.join('|') : 'ninguna_coincide';
+  }
   async function webhook(req, res, url) {
     let body = {}; if (req.method === 'POST') { try { body = await readBody(req); } catch (_) { body = {}; } }
     const q = url.searchParams;
@@ -157,7 +173,7 @@ function createServer(cfgIn) {
     if (type !== 'payment' || !dataId || !/^[A-Za-z0-9_-]{1,40}$/.test(String(dataId))) return send(res, 200, { ok: true, ignored: 'no_es_pago' });
     if (!signatureOk(req, dataId)) {
       const sig = String(req.headers['x-signature'] || '');
-      alert('seguridad', 'Aviso con firma inválida ignorado · diag: x-signature=' + (sig ? 'sí(' + sig.split(',').map(x => x.split('=')[0]).join('+') + ')' : 'no') + ', x-request-id=' + (req.headers['x-request-id'] ? 'sí' : 'no') + ', query=[' + [...q.keys()].join(',') + '], tipo=' + type + ', método=' + req.method + ', dataId=' + dataId + ', largoClave=' + cfg.webhookSecret.length + ', ts=' + ((sig.match(/ts=([^,]+)/) || [])[1] || '?'));
+      alert('seguridad', 'Aviso con firma inválida ignorado · diag: x-signature=' + (sig ? 'sí(' + sig.split(',').map(x => x.split('=')[0]).join('+') + ')' : 'no') + ', x-request-id=' + (req.headers['x-request-id'] ? 'sí' : 'no') + ', query=[' + [...q.keys()].join(',') + '], tipo=' + type + ', método=' + req.method + ', dataId=' + dataId + ', largoClave=' + cfg.webhookSecret.length + ', ts=' + ((sig.match(/ts=([^,]+)/) || [])[1] || '?') + ', variantes=' + sigVariants(req, dataId, body));
       return send(res, 401, { error: 'firma inválida' });
     }
     try {
