@@ -26,7 +26,7 @@ function loadConfig(env = process.env) {
     baseUrl: (env.BASE_URL || '').replace(/\/$/, ''),
     frontUrl: (env.FRONT_URL || '').replace(/\/$/, ''),
     backUrl: (env.BACK_URL || '').replace(/\/$/, ''),
-    webhookSecret: env.WEBHOOK_SECRET || '',
+    webhookSecret: (env.WEBHOOK_SECRET || '').trim().replace(/^["']|["']$/g, ''),
     adminToken: env.ADMIN_TOKEN || '',
     dataDir: env.DATA_DIR || path.join(__dirname, 'data'),
     fetchTimeoutMs: +env.FETCH_TIMEOUT_MS || 15000,
@@ -157,7 +157,7 @@ function createServer(cfgIn) {
     if (type !== 'payment' || !dataId || !/^[A-Za-z0-9_-]{1,40}$/.test(String(dataId))) return send(res, 200, { ok: true, ignored: 'no_es_pago' });
     if (!signatureOk(req, dataId)) {
       const sig = String(req.headers['x-signature'] || '');
-      alert('seguridad', 'Aviso con firma inválida ignorado · diag: x-signature=' + (sig ? 'sí(' + sig.split(',').map(x => x.split('=')[0]).join('+') + ')' : 'no') + ', x-request-id=' + (req.headers['x-request-id'] ? 'sí' : 'no') + ', query=[' + [...q.keys()].join(',') + '], tipo=' + type + ', método=' + req.method);
+      alert('seguridad', 'Aviso con firma inválida ignorado · diag: x-signature=' + (sig ? 'sí(' + sig.split(',').map(x => x.split('=')[0]).join('+') + ')' : 'no') + ', x-request-id=' + (req.headers['x-request-id'] ? 'sí' : 'no') + ', query=[' + [...q.keys()].join(',') + '], tipo=' + type + ', método=' + req.method + ', dataId=' + dataId + ', largoClave=' + cfg.webhookSecret.length + ', ts=' + ((sig.match(/ts=([^,]+)/) || [])[1] || '?'));
       return send(res, 401, { error: 'firma inválida' });
     }
     try {
