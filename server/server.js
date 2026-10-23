@@ -223,6 +223,20 @@ function createServer(cfgIn) {
       let m = p.match(/^\/api\/order\/([A-Za-z0-9]+)$/);
       if (m && req.method === 'GET') { const o = state.orders[m[1]]; return o ? send(res, 200, { id: o.id, status: o.status, total: o.total }, cors(req)) : send(res, 404, { error: 'no existe' }); }
       if (p === '/api/orders' && req.method === 'GET') return isAdmin(req) ? send(res, 200, Object.values(state.orders)) : send(res, 403, { error: 'no autorizado' });
+      if (p === '/api/admin/reconcile' && req.method === 'POST') {
+        if (!isAdmin(req)) return send(res, 403, { error: 'no autorizado' });
+        if (limited('admin:' + ip, 30)) return send(res, 429, { error: 'demasiados intentos' });
+        let b; try { b = await readBody(req); } catch (_) { return send(res, 400, { error: 'pedido inválido' }); }
+        const order = state.orders[String(b.orderId || '')];
+        if (!order) return send(res, 404, { error: 'pedido inexistente' });
+        try {
+          const r = await mp('GET', '/v1/payments/search?external_reference=' + encodeURIComponent(order.id) + '&limit=10');
+          if (r.status >= 300 || !r.data || !Array.isArray(r.data.results)) throw new Error('MP ' + r.status);
+          const out = [];
+          for (const pay of r.data.results.slice(0, 10)) out.push({ pago: String(pay.id), resultado: await processPayment(String(pay.id)) });
+          return send(res, 200, { pedido: order.id, estado: order.status, pagos: out });
+        } catch (e) { return send(res, 502, { error: 'no se pudo consultar a Mercado Pago' }); }
+      }
       if (p === '/api/alerts' && req.method === 'GET') return isAdmin(req) ? send(res, 200, state.alerts) : send(res, 403, { error: 'no autorizado' });
       return send(res, 404, { error: 'no encontrado' });
     } catch (e) { console.error('error interno'); return send(res, 500, { error: 'error interno' }); }

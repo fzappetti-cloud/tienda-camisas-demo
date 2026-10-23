@@ -22,6 +22,7 @@ function createMock({ token = 'TEST-token', secret = '' } = {}) {
       const b = await body(req), id = 'PREF-' + (++n);
       prefs[id] = { ...b, id, init_point: 'http://mock/pagar/' + id }; return send(res, 201, prefs[id]);
     }
+    if (u.pathname === '/v1/payments/search' && req.method === 'GET') { const ref = u.searchParams.get('external_reference'); return send(res, 200, { results: Object.values(pays).filter(x => x.external_reference === ref) }); }
     let m = u.pathname.match(/^\/v1\/payments\/(\w+)$/);
     if (m && req.method === 'GET') return pays[m[1]] ? send(res, 200, pays[m[1]]) : send(res, 404, { message: 'not found' });
     if (u.pathname === '/_sim/pay' && req.method === 'POST') { // simula que la compradora pagó

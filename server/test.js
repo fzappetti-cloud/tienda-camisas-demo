@@ -85,6 +85,21 @@ const J = (url, o = {}) => fetch(url, { ...o, headers: { 'Content-Type': 'applic
   check('ninguna respuesta pública contiene la clave de Mercado Pago', !all.includes('TEST-token') && !all.includes(SECRET));
   check('el estado guardado no contiene la clave', !fs.readFileSync(path.join(dir, 'state.json'), 'utf8').includes('TEST-token'));
 
+  console.log('\n8b) Conciliación protegida (sin depender del aviso)');
+  const rec = (id, tok) => J(A + '/api/admin/reconcile', { method: 'POST', headers: tok ? { 'x-admin-token': tok } : {}, body: { orderId: id } });
+  const o6 = (await buy([{ id: 1, qty: 1, size: 'M' }])).data.orderId; await pay(o6, { status: 'approved', notify: false });
+  check('sin clave de administrador → 403', (await rec(o6)).status === 403);
+  check('clave incorrecta → 403', (await rec(o6, 'mala')).status === 403);
+  check('sin avisos, el pedido sigue pendiente', (await status(o6)) === 'pendiente');
+  const rr = await rec(o6, 'admin-123');
+  check('con clave: concilia y queda "pagado"', rr.status === 200 && (await status(o6)) === 'pagado', JSON.stringify(rr.data));
+  const o7 = (await buy([{ id: 1, qty: 1, size: 'M' }])).data.orderId; await pay(o7, { status: 'approved', amount: 5, notify: false });
+  await rec(o7, 'admin-123');
+  check('conciliar con monto distinto → "revisar", nunca "pagado"', (await status(o7)) === 'revisar');
+  check('pedido inexistente → 404', (await rec('Ainexistente', 'admin-123')).status === 404);
+  const o8 = (await buy([{ id: 1, qty: 1, size: 'M' }])).data.orderId; await pay(o8, { status: 'rejected', notify: false }); await rec(o8, 'admin-123');
+  check('conciliar un pago rechazado → no queda "pagado"', (await status(o8)) !== 'pagado');
+
   console.log('\n9) Mercado Pago caído');
   mock.close();
   const down = await buy([{ id: 1, qty: 1, size: 'M' }]);
