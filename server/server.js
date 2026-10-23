@@ -151,19 +151,23 @@ function createServer(cfgIn) {
   }
   function sigVariants(req, dataId, body) {
     if (!cfg.webhookSecret) return 'sin_clave';
-    const sig = String(req.headers['x-signature'] || ''), rid = String(req.headers['x-request-id'] || '');
+    const sig = String(req.headers['x-signature'] || '');
     const ts = (sig.match(/ts=([^,]+)/) || [])[1], v1 = (sig.match(/v1=([a-f0-9]+)/) || [])[1];
     if (!ts || !v1) return 'sin_ts_v1';
     const ids = { query: String(dataId), query_min: String(dataId).toLowerCase(), cuerpo_data: String((body && body.data && body.data.id) || ''), cuerpo_id: String((body && body.id) || '') };
+    // candidatos para "request-id": cada valor de cada encabezado (los separados por coma se prueban uno a uno)
+    const rids = [['(vacío)', '']];
+    for (const [k, v] of Object.entries(req.headers)) { if (k === 'x-signature') continue; for (const part of String(v).split(',')) { const t = part.trim(); if (t && t.length <= 120) rids.push([k, t]); } }
     const hit = [];
     for (const [n, id] of Object.entries(ids)) {
       if (!id) continue;
-      for (const [m, man] of Object.entries({ completo: `id:${id};request-id:${rid};ts:${ts};`, sin_rid: `id:${id};ts:${ts};` })) {
+      for (const [hn, rid] of rids) {
+        const man = hn === '(vacío)' ? `id:${id};ts:${ts};` : `id:${id};request-id:${rid};ts:${ts};`;
         const h = crypto.createHmac('sha256', cfg.webhookSecret).update(man).digest('hex');
-        if (safeEq(h, v1)) hit.push(n + '/' + m);
+        if (safeEq(h, v1)) hit.push(n + '/' + hn);
       }
     }
-    return hit.length ? 'COINCIDE:' + hit.join('|') : 'ninguna_coincide';
+    return (hit.length ? 'COINCIDE:' + hit.join('|') : 'ninguna_coincide') + ' · encabezados=[' + Object.keys(req.headers).join(',') + '] · largo x-request-id=' + String(req.headers['x-request-id'] || '').length;
   }
   async function webhook(req, res, url) {
     let body = {}; if (req.method === 'POST') { try { body = await readBody(req); } catch (_) { body = {}; } }
