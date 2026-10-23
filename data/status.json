@@ -1,9 +1,9 @@
 {
-  "run": "2026-10-22T10:58:59.138Z",
+  "run": "2026-10-23T10:52:42.406Z",
   "stores": {
     "A": {
       "ok": true,
-      "count": 786,
+      "count": 791,
       "sinTalleElegido": 0,
       "talles": [],
       "requests": 115,
@@ -23,13 +23,13 @@
         {
           "category": "Blusas",
           "path": "/camisolas/",
-          "count": 88,
+          "count": 89,
           "capped": false
         },
         {
           "category": "Camisas",
           "path": "/camisas/",
-          "count": 178,
+          "count": 179,
           "capped": false
         },
         {
@@ -41,25 +41,25 @@
         {
           "category": "Chalecos",
           "path": "/chalecos/",
-          "count": 22,
+          "count": 23,
           "capped": false
         },
         {
           "category": "Remeras y tops",
           "path": "/remeras/",
-          "count": 219,
+          "count": 220,
           "capped": false
         },
         {
           "category": "Musculosas",
           "path": "/musculosas/",
-          "count": 110,
+          "count": 111,
           "capped": false
         },
         {
           "category": "Vestidos y monos",
           "path": "/vestidos1/",
-          "count": 69,
+          "count": 71,
           "capped": false
         },
         {
@@ -110,15 +110,15 @@
     },
     "B": {
       "ok": true,
-      "count": 931,
+      "count": 929,
       "sinTalleElegido": 0,
       "talles": [],
-      "requests": 108,
+      "requests": 107,
       "categories": [
         {
           "category": "Remeras y musculosas",
           "path": "/remeras1/",
-          "count": 397,
+          "count": 394,
           "capped": false
         },
         {
@@ -130,13 +130,13 @@
         {
           "category": "Vestidos importados",
           "path": "/vestidos/",
-          "count": 135,
+          "count": 136,
           "capped": false
         },
         {
           "category": "Fiesta",
           "path": "/fiesta/",
-          "count": 110,
+          "count": 109,
           "capped": false
         },
         {
