@@ -1,12 +1,12 @@
 {
-  "run": "2026-10-23T10:52:42.406Z",
+  "run": "2026-10-24T10:07:13.487Z",
   "stores": {
     "A": {
       "ok": true,
-      "count": 791,
+      "count": 794,
       "sinTalleElegido": 0,
       "talles": [],
-      "requests": 115,
+      "requests": 116,
       "categories": [
         {
           "category": "Sastreria",
@@ -23,13 +23,13 @@
         {
           "category": "Blusas",
           "path": "/camisolas/",
-          "count": 89,
+          "count": 90,
           "capped": false
         },
         {
           "category": "Camisas",
           "path": "/camisas/",
-          "count": 179,
+          "count": 181,
           "capped": false
         },
         {
@@ -47,13 +47,13 @@
         {
           "category": "Remeras y tops",
           "path": "/remeras/",
-          "count": 220,
+          "count": 221,
           "capped": false
         },
         {
           "category": "Musculosas",
           "path": "/musculosas/",
-          "count": 111,
+          "count": 113,
           "capped": false
         },
         {
@@ -110,27 +110,27 @@
     },
     "B": {
       "ok": true,
-      "count": 929,
+      "count": 937,
       "sinTalleElegido": 0,
       "talles": [],
-      "requests": 107,
+      "requests": 108,
       "categories": [
         {
           "category": "Remeras y musculosas",
           "path": "/remeras1/",
-          "count": 394,
+          "count": 397,
           "capped": false
         },
         {
           "category": "Camisas y blusas",
           "path": "/camisas-y-blusas/",
-          "count": 275,
+          "count": 276,
           "capped": false
         },
         {
           "category": "Vestidos importados",
           "path": "/vestidos/",
-          "count": 136,
+          "count": 140,
           "capped": false
         },
         {
@@ -148,13 +148,13 @@
         {
           "category": "Sastreria",
           "path": "/sastreria1/",
-          "count": 18,
+          "count": 19,
           "capped": false
         },
         {
           "category": "Partes de abajo",
           "path": "/pantalones/",
-          "count": 42,
+          "count": 43,
           "capped": false
         },
         {
