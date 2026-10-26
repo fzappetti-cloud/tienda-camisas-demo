@@ -279,7 +279,7 @@ const byId=id=>P.find(p=>p.id===id);
 const hd=u=>u;const th=u=>u.replace('-1024-1024.','-480-0.');
 const imgT=(p,alt)=>'<img src="'+p.img+'" alt="'+(alt||p.n)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\''+th(p.img)+'\'">';
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2400)}
-function fresh(){return{step:1,view:'panel',dist:{A:true,B:true},upd:{busy:false,msg:'',st:{},ready:false,last:null},cats:[],sizes:[],found:null,searching:false,picked:new Set(),imgs:{},mult:2,pub:[],cart:[],alerts:[],form:newForm(),orders:[
+function fresh(){return{step:1,view:'panel',dist:{A:true,B:true},upd:{busy:false,msg:'',st:{},ready:false,last:null},onlyNew:false,cats:[],sizes:[],found:null,searching:false,picked:new Set(),imgs:{},mult:2,pub:[],cart:[],alerts:[],form:newForm(),orders:[
  {id:1001,name:'María',last:'González',email:'maria@mail.com',tel:'351 555-0101',addr:'Obispo Trejo 450, Córdoba Capital',zone:'centro',items:[{id:14,size:'M',qty:1},{id:16,size:'L',qty:1}],status:'pagado',bought:{}},
  {id:1002,name:'Lucía',last:'Romero',email:'lucia@mail.com',tel:'3544 55-0202',addr:'San Martín 120, Villa Dolores',zone:'vd',items:[{id:17,size:'L',qty:2}],status:'pagado',bought:{}}]}}
 let S=fresh();
@@ -386,7 +386,7 @@ function renderPanel(){
 function step1(){
  const chips=(arr,sel,fn)=>arr.map(x=>'<span class="chip '+(sel.includes(x)?'on':'')+'" onclick="'+fn+'(\''+x.replace(/'/g,"\\'")+'\')">'+x+'</span>').join('');
  const u=S.upd,locked=!u.ready,names={A:'Vintage BSAS',B:'Rumba Helguera'};
- const stl=Object.keys(u.st||{}).map(k=>'<div class="small">'+names[k]+': '+({esperando:'⏳ en espera',leyendo:'🔎 leyendo catálogo…',ok:'✅ '+((u.st[k]||{}).count||0)+' prendas',error:'⚠️ '+esc((u.st[k]||{}).error||'no se pudo leer (se conserva la copia anterior)')})[(u.st[k]||{}).state]+'</div>').join('');
+ const stl=Object.keys(u.st||{}).map(k=>'<div class="small">'+names[k]+': '+({esperando:'⏳ en espera',leyendo:'🔎 leyendo catálogo…',ok:'✅ '+((u.st[k]||{}).count||0)+' prendas'+((u.st[k]||{}).primera?' (primera carga)':' · '+((u.st[k]||{}).nuevas||0)+' nuevas · '+((u.st[k]||{}).precio||0)+' con cambio de precio · '+((u.st[k]||{}).quitadas||0)+' que ya no están'),error:'⚠️ '+esc((u.st[k]||{}).error||'no se pudo leer (se conserva la copia anterior)')})[(u.st[k]||{}).state]+'</div>').join('');
  let h='<div class="card"><b>① Elegí qué distribuidora actualizar</b> <span class="small mut">(podés elegir una o las dos)</span><div class="row" style="margin-top:6px">'+['A','B'].map(k=>'<span class="chip '+(S.dist[k]?'on':'')+'" onclick="togDist(\''+k+'\')">'+names[k]+'</span>').join('')+'</div>'+
   '<div class="row" style="margin-top:12px"><input type="password" id="admKey" autocomplete="off" placeholder="Clave de administrador" value="'+esc(ADM)+'" oninput="ADM=this.value" style="max-width:240px"><button class="btn pri" onclick="updateCatalog()" '+(u.busy?'disabled':'')+'>🔄 Actualizar catálogo</button></div>'+
   (u.busy?'<div class="row" style="margin-top:10px"><div class="spin"></div><span class="small mut">Actualizando… puede tardar unos minutos. No cierres esta pantalla.</span></div>':'')+
@@ -395,12 +395,12 @@ function step1(){
   '<div class="card" style="margin-top:14px;'+(locked?'opacity:.55;pointer-events:none':'')+'"><b>② Filtrá lo que querés ver</b> '+(locked?'<span class="small mut">🔒 Se habilita cuando termina la actualización</span>':'<span class="small mut">(si no marcás ninguno, trae todos)</span>')+
   '<div class="g2" style="margin-top:8px"><div><b>Tipo de prenda</b><div class="row" style="margin-top:6px">'+chips(CATS,S.cats,'togCat')+'</div></div>'+
   '<div><b>Talles que ofrecés</b> <span class="small mut">(solo muestra prendas con esos talles disponibles)</span><div class="row" style="margin-top:6px">'+chips(ALLSZ,S.sizes,'togSz')+'</div></div></div>'+
-  '<div class="row" style="margin-top:16px"><button class="btn pri" onclick="doSearch()" '+((S.searching||locked)?'disabled':'')+'>🔎 Mostrar en el tablero</button></div></div>';
+  '<div class="row" style="margin-top:14px"><span class="chip '+(S.onlyNew?'on':'')+'" onclick="S.onlyNew=!S.onlyNew;S.found=null;render()">✨ Solo novedades (nuevas o con cambio de precio)</span></div><div class="row" style="margin-top:14px"><button class="btn pri" onclick="doSearch()" '+((S.searching||locked)?'disabled':'')+'>🔎 Mostrar en el tablero</button></div></div>';
  h+=addCard();
  if(S.searching)h+='<div class="card" style="margin-top:14px;text-align:center"><div class="spin"></div><p class="mut">Buscando y comparando talles disponibles…</p></div>';
  else if(S.found){
   h+='<div class="row" style="margin:16px 0 10px"><b>'+S.found.length+' prendas encontradas</b><span class="mut small">Tocá las que querés en tu tienda</span><span class="sp"></span><button class="btn sm" onclick="pickAll()">Elegir todas</button><button class="btn sm" onclick="S.picked.clear();render()">Quitar</button></div>';
-  h+=S.found.length?'<div class="pgrid">'+S.found.map(p=>'<div class="pc '+(S.picked.has(p.id)?'sel':'')+'" onclick="togPick('+p.id+')"><div class="ck">'+(S.picked.has(p.id)?'✓':'')+'</div><div class="im">'+imgT(p)+'</div><div class="tx"><b>'+p.n+'</b><span class="mut">'+DIST[p.d]+' · '+fmt(p.cost)+(p.demo?' · <b style="color:var(--warn)">EJEMPLO</b>':'')+'</span><div class="small mut">Talles: '+p.sz.join(', ')+'</div></div></div>').join('')+'</div>':'<div class="empty">No hay prendas con esos filtros. Probá con menos talles o más tipos de prenda.</div>';
+  h+=S.found.length?'<div class="pgrid">'+S.found.map(p=>'<div class="pc '+(S.picked.has(p.id)?'sel':'')+'" onclick="togPick('+p.id+')"><div class="ck">'+(S.picked.has(p.id)?'✓':'')+'</div><div class="im">'+imgT(p)+'</div><div class="tx"><b>'+p.n+'</b><span class="mut">'+DIST[p.d]+' · '+fmt(p.cost)+(p.demo?' · <b style="color:var(--warn)">EJEMPLO</b>':'')+(p.nuevo?' · <b style="color:var(--brand)">NUEVA</b>':'')+(p.prev?' · <b style="color:var(--warn)">'+(p.cost>p.prev?'PRECIO ↑':'PRECIO ↓')+' (antes '+fmt(p.prev)+')</b>':'')+'</span><div class="small mut">Talles: '+p.sz.join(', ')+'</div></div></div>').join('')+'</div>':'<div class="empty">No hay prendas con esos filtros. Probá con menos talles o más tipos de prenda.</div>';
   h+='<div class="row" style="margin-top:16px"><span class="mut">'+S.picked.size+' elegidas</span><span class="sp"></span><button class="btn pri" '+(S.picked.size?'':'disabled')+' onclick="goStep(2)">Siguiente: crear imágenes →</button></div>';
  }
  return h}
@@ -412,11 +412,11 @@ const normSz=z=>{const t=String(z).toUpperCase().match(/XXXL|XXL|XXS|XL|XS|S|M|L
 function applyCatalog(d){
  const old=P.slice(0,BASEN);dropExtras();const out=[];
  ['A','B'].forEach(k=>{const st=d.stores&&d.stores[k];
-  if(st&&Array.isArray(st.products)&&st.products.length)st.products.forEach(q=>{if(q&&q.name&&q.image&&q.price>0)out.push({n:String(q.name),d:k,cost:Math.round(q.price),img:q.image,sz:Array.isArray(q.sz)?q.sz.map(normSz):[],cat:q.cat||'Otros',cats:q.cats&&q.cats.length?q.cats:[q.cat||'Otros'],url:q.url||''})});
+  if(st&&Array.isArray(st.products)&&st.products.length)st.products.forEach(q=>{if(q&&q.name&&q.image&&q.price>0)out.push({n:String(q.name),d:k,cost:Math.round(q.price),img:q.image,sz:Array.isArray(q.sz)?q.sz.map(normSz):[],cat:q.cat||'Otros',cats:q.cats&&q.cats.length?q.cats:[q.cat||'Otros'],url:q.url||'',nuevo:!!q.nuevo,prev:q.prevPrice||0})});
   else old.filter(p=>p.d===k).forEach(p=>out.push({...p}))});
  P.length=0;out.forEach((p,i)=>{p.id=i+1;P.push(p)});BASEN=P.length;
  CATS=[...new Set(P.flatMap(p=>p.cats||[p.cat]))].sort((a,b)=>a.localeCompare(b,'es'));
- S.found=null;S.picked=new Set();S.cart=[];S.pub=[];S.imgs={};S.priceSeen=false;S.cats=[];S.sizes=[];
+ S.found=null;S.picked=new Set();S.cart=[];S.pub=[];S.imgs={};S.priceSeen=false;S.cats=[];S.sizes=[];S.onlyNew=false;
 }
 async function updateCatalog(){
  const u=S.upd,stores=['A','B'].filter(k=>S.dist[k]);
@@ -450,7 +450,7 @@ function togSz(z){const i=S.sizes.indexOf(z);i<0?S.sizes.push(z):S.sizes.splice(
 function doSearch(){
  if(!Object.values(S.dist).some(Boolean)){toast('Elegí al menos una distribuidora');return}
  S.searching=true;render();
- setTimeout(()=>{S.searching=false;S.found=P.filter(p=>S.dist[p.d]&&(!S.cats.length||(p.cats||[p.cat]).some(c=>S.cats.includes(c)))&&(!S.sizes.length||p.sz.some(z=>S.sizes.includes(z)||z.split('/').some(x=>S.sizes.includes(x)))));
+ setTimeout(()=>{S.searching=false;S.found=P.filter(p=>S.dist[p.d]&&(!S.onlyNew||p.nuevo||p.prev)&&(!S.cats.length||(p.cats||[p.cat]).some(c=>S.cats.includes(c)))&&(!S.sizes.length||p.sz.some(z=>S.sizes.includes(z)||z.split('/').some(x=>S.sizes.includes(x)))));
   S.picked=new Set([...S.picked].filter(id=>S.found.some(p=>p.id===id)));render();toast(S.found.length+' prendas encontradas')},1100)}
 function togPick(id){S.picked.has(id)?S.picked.delete(id):S.picked.add(id);render()}
 function pickAll(){S.found.forEach(p=>S.picked.add(p.id));render()}

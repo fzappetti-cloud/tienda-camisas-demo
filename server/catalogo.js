@@ -10,6 +10,22 @@ const fs = require('fs'), path = require('path');
 const VALID = ['A', 'B'];             // Vintage BSAS y Rumba Helguera
 const COOLDOWN_MS = 60 * 1000;        // pausa mínima entre actualizaciones
 
+
+// Compara con la copia anterior: marca prendas nuevas, cambios de precio y las que ya no están. La clave es el enlace del producto.
+function comparar(prevStore, products, now) {
+  const prev = new Map(((prevStore && prevStore.products) || []).map(p => [p.url || p.name, p]));
+  const primera = !prev.size; let nuevas = 0, precio = 0; const seen = new Set();
+  const out = products.map(p => {
+    const key = p.url || p.name, o = prev.get(key); seen.add(key);
+    const q = { ...p, first: o ? (o.first || now) : now };
+    if (!primera && !o) { q.nuevo = true; nuevas++; }
+    if (o && o.price !== p.price) { q.prevPrice = o.price; precio++; }
+    return q;
+  });
+  const quitadas = primera ? [] : [...prev.entries()].filter(([k]) => !seen.has(k)).slice(0, 300).map(([, o]) => ({ name: o.name, url: o.url }));
+  return { products: out, nuevas, precio, quitadas, primera };
+}
+
 function createCatalogo(cfg) {
   const crawl = cfg.crawlStore || require('../scraper/sync.js').crawlStore;
   const file = path.join(cfg.dataDir, 'catalogo.json');
@@ -39,8 +55,9 @@ function createCatalogo(cfg) {
         job.stores[k] = { state: 'leyendo' };
         try {
           const st = await crawl(k, null, null, null);   // todas las categorías; los filtros se aplican después en el tablero
-          next.stores[k] = { name: st.name, url: st.url, updated: new Date().toISOString(), products: st.products, categories: st.allCategories };
-          job.stores[k] = { state: 'ok', count: st.products.length, requests: st.requests, errors: (st.errors || []).length };
+          const now = new Date().toISOString(), d = comparar(prev.stores[k], st.products, now);   // "macheo" contra la copia anterior (por enlace del producto)
+          next.stores[k] = { name: st.name, url: st.url, updated: now, products: d.products, quitadas: d.quitadas, categories: st.allCategories };
+          job.stores[k] = { state: 'ok', count: d.products.length, requests: st.requests, errors: (st.errors || []).length, nuevas: d.nuevas, precio: d.precio, quitadas: d.quitadas.length, primera: d.primera };
         } catch (e) {
           job.stores[k] = { state: 'error', error: String(e && e.message || e).slice(0, 160) };   // se conserva la copia anterior
         }
@@ -54,4 +71,4 @@ function createCatalogo(cfg) {
   }
   return { iniciar, estado, datos, VALID };
 }
-module.exports = { createCatalogo };
+module.exports = { createCatalogo, comparar };
