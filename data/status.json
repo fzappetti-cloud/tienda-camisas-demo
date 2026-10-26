@@ -1,9 +1,9 @@
 {
-  "run": "2026-10-25T10:32:34.665Z",
+  "run": "2026-10-26T12:05:11.827Z",
   "stores": {
     "A": {
       "ok": true,
-      "count": 794,
+      "count": 793,
       "sinTalleElegido": 0,
       "talles": [],
       "requests": 116,
@@ -47,7 +47,7 @@
         {
           "category": "Remeras y tops",
           "path": "/remeras/",
-          "count": 221,
+          "count": 220,
           "capped": false
         },
         {
