@@ -1,8 +1,6 @@
 name: 1 · Buscar tipos de prenda
 on:
-  schedule:
-    - cron: '0 7 * * 1'   # una vez por semana (lunes 04:00 Argentina) por si la tienda agrega categorías
-  workflow_dispatch:       # "Run workflow" = Buscar tipos de prenda ahora
+  workflow_dispatch:       # SOLO MANUAL (sin programación automática): "Run workflow" = Buscar tipos de prenda ahora
 permissions:
   contents: write
 concurrency:

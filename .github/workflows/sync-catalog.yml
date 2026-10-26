@@ -1,8 +1,6 @@
 name: 2 · Cargar catálogo de lo seleccionado
 on:
-  schedule:
-    - cron: '0 6 * * *'   # 03:00 hora Argentina, una vez por día (solo los tipos ya seleccionados)
-  workflow_dispatch:       # "Run workflow" = Cargar / Actualizar ahora
+  workflow_dispatch:       # SOLO MANUAL (sin programación automática): "Run workflow" = Cargar / Actualizar ahora
     inputs:
       seleccion:
         description: 'Pegá acá la selección copiada del tablero (botón "Copiar selección"). Vacío = usa la última guardada.'
