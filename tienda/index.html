@@ -279,14 +279,14 @@ const byId=id=>P.find(p=>p.id===id);
 const hd=u=>u;const th=u=>u.replace('-1024-1024.','-480-0.');
 const imgT=(p,alt)=>'<img src="'+p.img+'" alt="'+(alt||p.n)+'" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\''+th(p.img)+'\'">';
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2400)}
-function fresh(){return{step:1,view:'panel',dist:{A:true,B:true},cats:[],sizes:[],found:null,searching:false,picked:new Set(),imgs:{},mult:2,pub:[],cart:[],alerts:[],form:newForm(),orders:[
+function fresh(){return{step:1,view:'panel',dist:{A:true,B:true},upd:{busy:false,msg:'',st:{},ready:false,last:null},cats:[],sizes:[],found:null,searching:false,picked:new Set(),imgs:{},mult:2,pub:[],cart:[],alerts:[],form:newForm(),orders:[
  {id:1001,name:'María',last:'González',email:'maria@mail.com',tel:'351 555-0101',addr:'Obispo Trejo 450, Córdoba Capital',zone:'centro',items:[{id:14,size:'M',qty:1},{id:16,size:'L',qty:1}],status:'pagado',bought:{}},
  {id:1002,name:'Lucía',last:'Romero',email:'lucia@mail.com',tel:'3544 55-0202',addr:'San Martín 120, Villa Dolores',zone:'vd',items:[{id:17,size:'L',qty:2}],status:'pagado',bought:{}}]}}
 let S=fresh();
 const price=p=>Math.round(p.cost*S.mult/500)*500;
-const CATS=[...new Set(P.map(p=>p.cat))],ALLSZ=['S','M','L','XL','XXL','S/M','L/XL'];
+let CATS=[...new Set(P.map(p=>p.cat))];const ALLSZ=['S','M','L','XL','XXL','S/M','L/XL'];
 /* ---------- sumar prendas: otro mayorista por link / fotos propias ---------- */
-const BASEN=P.length,DISTH={};
+let BASEN=P.length;const DISTH={};
 DIST.C='Prendas propias (fuera de catálogo)';
 ['A','B'].forEach(k=>{const q=P.find(p=>p.d===k);try{DISTH[k]=new URL(q.url).hostname.replace(/^www\./,'')}catch(e){}});
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -375,7 +375,7 @@ $('#nav').onclick=e=>{const b=e.target.closest('button');if(b)show(b.dataset.v)}
 $('#reset').onclick=()=>{dropExtras();S=fresh();closeAll();show('panel');toast('Demo reiniciada')};
 
 /* ---------- PANEL ---------- */
-const STEPN=['Buscar','Crear imágenes','Precios','Publicar'],STEPD=['Elegís distribuidora, tipo de prenda y talles','Fondo uniforme y formato de tienda','Margen sobre el costo','Se carga en tu tienda'];
+const STEPN=['Buscar','Crear imágenes','Precios','Publicar'],STEPD=['Actualizás el catálogo y filtrás por tipo de prenda y talle','Fondo uniforme y formato de tienda','Margen sobre el costo','Se carga en tu tienda'];
 function stepDone(i){return i===1?!!(S.found&&S.picked.size):i===2?S.picked.size>0&&[...S.picked].every(id=>S.imgs[id]==='ok'):i===3?S.priceSeen:S.pub.length>0}
 function goStep(n){if(n>1&&!(S.found&&S.picked.size)){toast('Primero buscá y elegí prendas');return}S.step=n;render()}
 function renderPanel(){
@@ -385,10 +385,17 @@ function renderPanel(){
 }
 function step1(){
  const chips=(arr,sel,fn)=>arr.map(x=>'<span class="chip '+(sel.includes(x)?'on':'')+'" onclick="'+fn+'(\''+x.replace(/'/g,"\\'")+'\')">'+x+'</span>').join('');
- let h='<div class="card"><div class="g2"><div><b>Distribuidoras</b><div class="row" style="margin-top:6px">'+Object.keys(DIST).filter(k=>k in S.dist).map(k=>'<span class="chip '+(S.dist[k]?'on':'')+'" onclick="togDist(\''+k+'\')">'+DIST[k]+'</span>').join('')+'</div>'+
-  '<p style="margin:14px 0 6px"><b>Tipo de prenda</b> <span class="small mut">(si no marcás ninguno, trae todos)</span></p><div class="row">'+chips(CATS,S.cats,'togCat')+'</div></div>'+
-  '<div><b>Talles que ofrecés</b> <span class="small mut">(solo trae prendas con esos talles disponibles)</span><div class="row" style="margin-top:6px">'+chips(ALLSZ,S.sizes,'togSz')+'</div></div></div>'+
-  '<div class="row" style="margin-top:16px"><button class="btn pri" onclick="doSearch()" '+(S.searching?'disabled':'')+'>🔎 Buscar en las distribuidoras</button><span class="small mut">Demo: la búsqueda real lee el catálogo público de cada distribuidora una vez al día.</span></div></div>';
+ const u=S.upd,locked=!u.ready,names={A:'Vintage BSAS',B:'Rumba Helguera'};
+ const stl=Object.keys(u.st||{}).map(k=>'<div class="small">'+names[k]+': '+({esperando:'⏳ en espera',leyendo:'🔎 leyendo catálogo…',ok:'✅ '+((u.st[k]||{}).count||0)+' prendas',error:'⚠️ '+esc((u.st[k]||{}).error||'no se pudo leer (se conserva la copia anterior)')})[(u.st[k]||{}).state]+'</div>').join('');
+ let h='<div class="card"><b>① Elegí qué distribuidora actualizar</b> <span class="small mut">(podés elegir una o las dos)</span><div class="row" style="margin-top:6px">'+['A','B'].map(k=>'<span class="chip '+(S.dist[k]?'on':'')+'" onclick="togDist(\''+k+'\')">'+names[k]+'</span>').join('')+'</div>'+
+  '<div class="row" style="margin-top:12px"><input type="password" id="admKey" autocomplete="off" placeholder="Clave de administrador" value="'+esc(ADM)+'" oninput="ADM=this.value" style="max-width:240px"><button class="btn pri" onclick="updateCatalog()" '+(u.busy?'disabled':'')+'>🔄 Actualizar catálogo</button></div>'+
+  (u.busy?'<div class="row" style="margin-top:10px"><div class="spin"></div><span class="small mut">Actualizando… puede tardar unos minutos. No cierres esta pantalla.</span></div>':'')+
+  (stl?'<div style="margin-top:8px">'+stl+'</div>':'')+(u.msg?'<p style="margin:10px 0 0">'+u.msg+'</p>':'')+
+  '<p class="small mut" style="margin:10px 0 0">'+(u.last?'Última actualización guardada: '+new Date(u.last).toLocaleString('es-AR')+'. ':'')+'Se actualiza solo cuando apretás el botón: no hay ejecución automática.</p></div>'+
+  '<div class="card" style="margin-top:14px;'+(locked?'opacity:.55;pointer-events:none':'')+'"><b>② Filtrá lo que querés ver</b> '+(locked?'<span class="small mut">🔒 Se habilita cuando termina la actualización</span>':'<span class="small mut">(si no marcás ninguno, trae todos)</span>')+
+  '<div class="g2" style="margin-top:8px"><div><b>Tipo de prenda</b><div class="row" style="margin-top:6px">'+chips(CATS,S.cats,'togCat')+'</div></div>'+
+  '<div><b>Talles que ofrecés</b> <span class="small mut">(solo muestra prendas con esos talles disponibles)</span><div class="row" style="margin-top:6px">'+chips(ALLSZ,S.sizes,'togSz')+'</div></div></div>'+
+  '<div class="row" style="margin-top:16px"><button class="btn pri" onclick="doSearch()" '+((S.searching||locked)?'disabled':'')+'>🔎 Mostrar en el tablero</button></div></div>';
  h+=addCard();
  if(S.searching)h+='<div class="card" style="margin-top:14px;text-align:center"><div class="spin"></div><p class="mut">Buscando y comparando talles disponibles…</p></div>';
  else if(S.found){
@@ -397,13 +404,53 @@ function step1(){
   h+='<div class="row" style="margin-top:16px"><span class="mut">'+S.picked.size+' elegidas</span><span class="sp"></span><button class="btn pri" '+(S.picked.size?'':'disabled')+' onclick="goStep(2)">Siguiente: crear imágenes →</button></div>';
  }
  return h}
+
+/* ---------- actualizar catálogo por orden (botón) ---------- */
+let ADM='';
+const API_BASE=/github\.io$/.test(location.hostname)?'https://cobro-production-257f.up.railway.app':'';
+const normSz=z=>{const t=String(z).toUpperCase().match(/XXXL|XXL|XXS|XL|XS|S|M|L|U/g)||[];return t.length>1?t.join('/'):(t[0]||String(z))};
+function applyCatalog(d){
+ const old=P.slice(0,BASEN);dropExtras();const out=[];
+ ['A','B'].forEach(k=>{const st=d.stores&&d.stores[k];
+  if(st&&Array.isArray(st.products)&&st.products.length)st.products.forEach(q=>{if(q&&q.name&&q.image&&q.price>0)out.push({n:String(q.name),d:k,cost:Math.round(q.price),img:q.image,sz:Array.isArray(q.sz)?q.sz.map(normSz):[],cat:q.cat||'Otros',cats:q.cats&&q.cats.length?q.cats:[q.cat||'Otros'],url:q.url||''})});
+  else old.filter(p=>p.d===k).forEach(p=>out.push({...p}))});
+ P.length=0;out.forEach((p,i)=>{p.id=i+1;P.push(p)});BASEN=P.length;
+ CATS=[...new Set(P.flatMap(p=>p.cats||[p.cat]))].sort((a,b)=>a.localeCompare(b,'es'));
+ S.found=null;S.picked=new Set();S.cart=[];S.pub=[];S.imgs={};S.priceSeen=false;S.cats=[];S.sizes=[];
+}
+async function updateCatalog(){
+ const u=S.upd,stores=['A','B'].filter(k=>S.dist[k]);
+ if(!stores.length){toast('Elegí al menos una distribuidora');return}
+ if(!ADM){toast('Ingresá la clave de administrador');return}
+ u.busy=true;u.msg='';u.st={};render();
+ try{
+  const r=await fetch(API_BASE+'/api/catalogo/actualizar',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':ADM},body:JSON.stringify({stores})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){u.busy=false;u.msg='⚠️ '+(r.status===403?'La clave de administrador no es correcta.':(j.error||'No se pudo iniciar la actualización.'));render();return}
+  u.st=j.stores||{};pollCatalog(0)
+ }catch(e){u.busy=false;u.msg='⚠️ No se pudo conectar con el servidor.';render()}
+}
+async function pollCatalog(n){   // máximo 180 consultas cada 3 s (9 min): nunca queda esperando para siempre
+ const u=S.upd;
+ if(n>=180){u.busy=false;u.msg='⚠️ La actualización tarda demasiado. Probá de nuevo en unos minutos.';render();return}
+ try{
+  const j=await(await fetch(API_BASE+'/api/catalogo/estado')).json();u.st=j.stores||{};
+  if(j.running){render();setTimeout(()=>pollCatalog(n+1),3000);return}
+  if(!Object.keys(u.st).length){u.busy=false;u.msg='⚠️ No se encontró la actualización (el servidor pudo reiniciarse). Probá de nuevo.';render();return}
+  const d=await(await fetch(API_BASE+'/api/catalogo')).json();
+  const ok=Object.values(u.st).some(x=>x.state==='ok');
+  if(ok){applyCatalog(d);u.last=d.updated;u.ready=true}
+  u.busy=false;u.msg=ok?'✅ Catálogo actualizado. Ya podés filtrar por tipo de prenda y talle.':'⚠️ No se pudo actualizar ninguna distribuidora. Se conserva el catálogo anterior.';render()
+ }catch(e){u.busy=false;u.msg='⚠️ Se perdió la conexión con el servidor.';render()}
+}
+fetch(API_BASE+'/api/catalogo').then(r=>r.ok?r.json():null).then(d=>{if(d&&d.updated&&d.stores){applyCatalog(d);S.upd.last=d.updated;render()}}).catch(()=>{});
 function togDist(k){S.dist[k]=!S.dist[k];S.found=null;render()}
 function togCat(c){const i=S.cats.indexOf(c);i<0?S.cats.push(c):S.cats.splice(i,1);S.found=null;render()}
 function togSz(z){const i=S.sizes.indexOf(z);i<0?S.sizes.push(z):S.sizes.splice(i,1);S.found=null;render()}
 function doSearch(){
  if(!Object.values(S.dist).some(Boolean)){toast('Elegí al menos una distribuidora');return}
  S.searching=true;render();
- setTimeout(()=>{S.searching=false;S.found=P.filter(p=>S.dist[p.d]&&(!S.cats.length||S.cats.includes(p.cat))&&(!S.sizes.length||p.sz.some(z=>S.sizes.includes(z)||z.split('/').some(x=>S.sizes.includes(x)))));
+ setTimeout(()=>{S.searching=false;S.found=P.filter(p=>S.dist[p.d]&&(!S.cats.length||(p.cats||[p.cat]).some(c=>S.cats.includes(c)))&&(!S.sizes.length||p.sz.some(z=>S.sizes.includes(z)||z.split('/').some(x=>S.sizes.includes(x)))));
   S.picked=new Set([...S.picked].filter(id=>S.found.some(p=>p.id===id)));render();toast(S.found.length+' prendas encontradas')},1100)}
 function togPick(id){S.picked.has(id)?S.picked.delete(id):S.picked.add(id);render()}
 function pickAll(){S.found.forEach(p=>S.picked.add(p.id));render()}

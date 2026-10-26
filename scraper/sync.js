@@ -324,4 +324,4 @@ async function main() {
   const ok = mode === 'categorias' ? await runCategories() : await runCatalog();
   process.exit(ok ? 0 : 1);
 }
-if (require.main === module) main(); else module.exports = { checkPublicHttps, probeStore, cleanStoreName, parseProductPage, applySizes, parseSizes, parseProducts, discoverCategories, crawlStore, validateSelection, LIMITS };
+if (require.main === module) main(); else module.exports = { checkPublicHttps, probeStore, cleanStoreName, parseProductPage, applySizes, parseSizes, parseProducts, discoverCategories, crawlStore, validateSelection, LIMITS, STORES };

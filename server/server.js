@@ -137,7 +137,8 @@ function createServer(cfgIn) {
     if (!isAdmin(req)) { limited('adm:' + ip, 10); send(res, 403, { error: 'no autorizado' }); return false; }
     return true;
   };
-  const cors = req => (cfg.frontUrl && req.headers.origin === cfg.frontUrl) ? { 'Access-Control-Allow-Origin': cfg.frontUrl, 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST,GET,OPTIONS' } : {};
+  const catalogo = require('./catalogo').createCatalogo(cfg);
+  const cors = req => (cfg.frontUrl && req.headers.origin === cfg.frontUrl) ? { 'Access-Control-Allow-Origin': cfg.frontUrl, 'Access-Control-Allow-Headers': 'Content-Type, x-admin-token', 'Access-Control-Allow-Methods': 'POST,GET,OPTIONS' } : {};
 
   /* ---- 1) crear pedido: el precio sale de la lista del servidor ---- */
   async function checkout(req, res) {
@@ -301,6 +302,14 @@ function createServer(cfgIn) {
           for (const pay of r.data.results.slice(0, 10)) out.push({ pago: String(pay.id), resultado: await processPayment(String(pay.id)) });
           return send(res, 200, { pedido: order.id, estado: order.status, pagos: out });
         } catch (e) { return send(res, 502, { error: 'no se pudo consultar a Mercado Pago' }); }
+      }
+      if (p === '/api/catalogo' && req.method === 'GET') return send(res, 200, catalogo.datos(), cors(req));
+      if (p === '/api/catalogo/estado' && req.method === 'GET') return send(res, 200, catalogo.estado(), cors(req));
+      if (p === '/api/catalogo/actualizar' && req.method === 'POST') {
+        if (!adminGate(req, res)) return;
+        let b; try { b = await readBody(req); } catch (_) { return send(res, 400, { error: 'pedido inválido' }, cors(req)); }
+        const r = catalogo.iniciar(b && b.stores);
+        return send(res, r.code, r.error ? { error: r.error } : r.estado, cors(req));
       }
       if (p === '/api/alerts' && req.method === 'GET') return adminGate(req, res) ? send(res, 200, state.alerts) : undefined;
       if (serveSite(req, res, p)) return;

@@ -33,3 +33,8 @@ La clienta puede copiar el enlace de una prenda que vio en la distribuidora y pe
 `node scraper/sync.js producto https://www.vintagebsas.com.ar/productos/<producto>/` devuelve nombre, foto, precio, talles disponibles y los productos relacionados que la tienda sugiere.
 Importante: en estas páginas el JSON-LD (datos para Google) pertenece a los productos relacionados; el principal se lee de `og:title`, `og:image` y el bloque `#single-product`.
 Solo se aceptan enlaces de productos de las tiendas conocidas (`https`, `/productos/<slug>/`). En el demo, el campo busca el enlace dentro del catálogo ya guardado; la lectura real de la página se hace en el servidor.
+
+
+## Actualizar el catálogo desde el tablero (por orden)
+En la pestaña **Panel de alimentación → 1 · Buscar**: ① elegís Vintage BSAS, Rumba Helguera o las dos, ingresás la **clave de administrador** (variable `ADMIN_TOKEN` de Railway) y apretás **Actualizar catálogo**; ② al terminar se habilitan los filtros por **tipo de prenda** y **talle** y el botón **Mostrar en el tablero**.
+El servidor lee las tiendas solo cuando se aprieta el botón (una actualización a la vez, pausa de 60 s entre una y otra, topes de tiempo y reintentos del scraper). El resultado se guarda en el volumen (`catalogo.json`) y sobrevive a los reinicios. No hay ninguna ejecución automática.
