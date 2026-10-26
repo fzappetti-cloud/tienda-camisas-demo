@@ -257,6 +257,28 @@ function createServer(cfgIn) {
     save(); return 'pendiente'; // pending / in_process: sigue sin pagar
   }
 
+
+  /* ---- páginas del demo (solo lectura, solo carpetas permitidas) ---- */
+  const SITE_ROOT = cfg.siteDir || require('path').resolve(__dirname, '..');
+  const SITE_DIRS = ['tienda', 'demo'];
+  const MIME = { '.html': 'text/html; charset=utf-8', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.ico': 'image/x-icon', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8' };
+  const serveSite = (req, res, p) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return false;
+    if (p === '/') { res.writeHead(302, { Location: '/tienda/' }); res.end(); return true; }
+    let rel; try { rel = decodeURIComponent(p); } catch (_) { return false; }
+    if (rel.includes('\0') || rel.includes('\\')) return false;
+    if (rel.endsWith('/')) rel += 'index.html';
+    const parts = rel.split('/').filter(Boolean);
+    if (!parts.length || !SITE_DIRS.includes(parts[0]) || parts.some(x => x === '..' || x.startsWith('.'))) return false;
+    const fsPath = require('path').join(SITE_ROOT, ...parts);
+    if (!fsPath.startsWith(require('path').join(SITE_ROOT, parts[0]) + require('path').sep)) return false;
+    const type = MIME[require('path').extname(fsPath).toLowerCase()];
+    if (!type) return false;
+    let data; try { data = require('fs').readFileSync(fsPath); } catch (_) { return false; }
+    res.writeHead(200, { 'Content-Type': type, 'Content-Length': data.length, 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Strict-Transport-Security': 'max-age=31536000', 'Cache-Control': type.startsWith('text/html') ? 'no-cache' : 'public, max-age=3600' });
+    res.end(req.method === 'HEAD' ? undefined : data); return true;
+  };
+
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://x'), p = url.pathname, ip = clientIp(req);
     try {
@@ -281,6 +303,7 @@ function createServer(cfgIn) {
         } catch (e) { return send(res, 502, { error: 'no se pudo consultar a Mercado Pago' }); }
       }
       if (p === '/api/alerts' && req.method === 'GET') return adminGate(req, res) ? send(res, 200, state.alerts) : undefined;
+      if (serveSite(req, res, p)) return;
       return send(res, 404, { error: 'no encontrado' });
     } catch (e) { console.error('error interno'); return send(res, 500, { error: 'error interno' }); }
   });
